@@ -6,10 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import ru.vozov.moneystatbot.service.manager.FeedbackManager;
-import ru.vozov.moneystatbot.service.manager.HelpManager;
-import ru.vozov.moneystatbot.service.manager.RefillManager;
-import ru.vozov.moneystatbot.service.manager.StartManager;
+import ru.vozov.moneystatbot.service.manager.*;
 
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -18,13 +15,15 @@ public class CallbackQueryHandler implements Handler {
     final HelpManager helpManager;
     final FeedbackManager feedbackManager;
     final RefillManager refillManager;
+    final ExpenseManager expenseManager;
 
     @Autowired
-    public CallbackQueryHandler(StartManager startManager, HelpManager helpManager, FeedbackManager feedbackManager, RefillManager refillManager) {
+    public CallbackQueryHandler(StartManager startManager, HelpManager helpManager, FeedbackManager feedbackManager, RefillManager refillManager, ExpenseManager expenseManager) {
         this.startManager = startManager;
         this.helpManager = helpManager;
         this.feedbackManager = feedbackManager;
         this.refillManager = refillManager;
+        this.expenseManager = expenseManager;
     }
 
     @Override
@@ -43,6 +42,9 @@ public class CallbackQueryHandler implements Handler {
             }
             case "REFILL" -> {
                 return refillManager.answerCallbackQuery(update.getCallbackQuery());
+            }
+            case "EXPENSE" -> {
+                return expenseManager.answerCallbackQuery(update.getCallbackQuery());
             }
         }
         return null;

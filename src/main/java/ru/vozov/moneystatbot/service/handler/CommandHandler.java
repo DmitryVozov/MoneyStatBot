@@ -8,10 +8,7 @@ import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.vozov.moneystatbot.service.factory.AnswerMessageFactory;
-import ru.vozov.moneystatbot.service.manager.FeedbackManager;
-import ru.vozov.moneystatbot.service.manager.HelpManager;
-import ru.vozov.moneystatbot.service.manager.RefillManager;
-import ru.vozov.moneystatbot.service.manager.StartManager;
+import ru.vozov.moneystatbot.service.manager.*;
 
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -20,14 +17,16 @@ public class CommandHandler implements Handler {
     final HelpManager helpManager;
     final FeedbackManager feedbackManager;
     final RefillManager refillManager;
+    final ExpenseManager expenseManager;
     final AnswerMessageFactory answerMessageFactory;
 
     @Autowired
-    public CommandHandler(StartManager startManager, HelpManager helpManager, FeedbackManager feedbackManager, RefillManager refillManager, AnswerMessageFactory answerMessageFactory) {
+    public CommandHandler(StartManager startManager, HelpManager helpManager, FeedbackManager feedbackManager, RefillManager refillManager, ExpenseManager expenseManager, AnswerMessageFactory answerMessageFactory) {
         this.startManager = startManager;
         this.helpManager = helpManager;
         this.feedbackManager = feedbackManager;
         this.refillManager = refillManager;
+        this.expenseManager = expenseManager;
         this.answerMessageFactory = answerMessageFactory;
     }
 
@@ -47,6 +46,9 @@ public class CommandHandler implements Handler {
             }
             case "/refill" -> {
                 return refillManager.answerCommand(message);
+            }
+            case "/expense" -> {
+                return expenseManager.answerCommand(message);
             }
             default -> {
                 return defaultAnswer(message);
