@@ -12,10 +12,10 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.vozov.moneystatbot.model.customer.Customer;
 import ru.vozov.moneystatbot.model.customer.CustomerStatus;
-import ru.vozov.moneystatbot.model.refill.Refill;
-import ru.vozov.moneystatbot.model.refill.RefillType;
+import ru.vozov.moneystatbot.model.expense.Expense;
+import ru.vozov.moneystatbot.model.expense.ExpenseType;
 import ru.vozov.moneystatbot.repository.CustomerRepository;
-import ru.vozov.moneystatbot.repository.RefillRepository;
+import ru.vozov.moneystatbot.repository.ExpenseRepository;
 import ru.vozov.moneystatbot.service.factory.AnswerMessageFactory;
 import ru.vozov.moneystatbot.service.factory.KeyboardFactory;
 import ru.vozov.moneystatbot.telegram.MoneyStatBot;
@@ -27,48 +27,48 @@ import java.util.List;
 
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class RefillManager {
+public class ExpenseManager {
     final AnswerMessageFactory answerMessageFactory;
     final KeyboardFactory keyboardFactory;
     final CustomerRepository customerRepository;
-    final RefillRepository refillRepository;
+    final ExpenseRepository expenseRepository;
     final MoneyStatBot bot;
 
     @Autowired
-    public RefillManager(AnswerMessageFactory answerMessageFactory,
+    public ExpenseManager(AnswerMessageFactory answerMessageFactory,
                          KeyboardFactory keyboardFactory,
                          CustomerRepository customerRepository,
-                         RefillRepository refillRepository,
+                          ExpenseRepository expenseRepository,
                          @Lazy MoneyStatBot bot) {
         this.answerMessageFactory = answerMessageFactory;
         this.keyboardFactory = keyboardFactory;
         this.customerRepository = customerRepository;
-        this.refillRepository = refillRepository;
+        this.expenseRepository = expenseRepository;
         this.bot = bot;
     }
 
     public BotApiMethod<?> answerCommand(Message message) {
         Long chatId = message.getChatId();
 
-        if (refillRepository.existsByCustomerAndIsCreate(customerRepository.findById(chatId).orElseThrow(),false)) {
+        if (expenseRepository.existsByCustomerAndIsCreate(customerRepository.findById(chatId).orElseThrow(),false)) {
             return answerMessageFactory.getSendMessage(
                     chatId,
-                    "У вас есть пополнение в процессе создания, для того чтобы создать новое необходимо отменить предыдущее. После отмены повторите попытку.",
+                    "У вас есть списание в процессе создания, для того чтобы создать новое необходимо отменить предыдущее. После отмены повторите попытку.",
                     keyboardFactory.getInlineKeyboard(
-                            List.of("Отменить предыдущее пополнение"),
+                            List.of("Отменить предыдущее списание"),
                             List.of(1),
-                            List.of("REFILL_CANCEL")
+                            List.of("EXPENSE_CANCEL")
                     )
             );
         }
         return answerMessageFactory.getSendMessage(
                 chatId,
-                "Здесь Вы можете сохранять Ваши пополнения денежных средств. Нажмите продолжить для создания.",
+                "Здесь вы можете сохранять Ваши списания денежных средств. Нажмите продолжить для создания.",
                 keyboardFactory.getInlineKeyboard(
                         List.of("Продолжить",
                                 "Отмена"),
                         List.of(1, 1),
-                        List.of("REFILL_SUM","REFILL_CANCEL")
+                        List.of("EXPENSE_SUM","EXPENSE_CANCEL")
                 )
         );
     }
@@ -110,13 +110,13 @@ public class RefillManager {
         CustomerStatus status = customer.getStatus();
 
         switch (status) {
-            case SENDING_REFILL_SUM -> {
+            case SENDING_EXPENSE_SUM -> {
                 return addSum(message, customer);
             }
-            case SENDING_REFILL_DATE -> {
+            case SENDING_EXPENSE_DATE -> {
                 return addDate(message, customer);
             }
-            case SENDING_REFILL_DESC -> {
+            case SENDING_EXPENSE_DESC -> {
                 return addDescription(message, customer);
             }
         }
@@ -126,48 +126,48 @@ public class RefillManager {
 
 
     private BotApiMethod<?> startMessage(CallbackQuery callbackQuery) {
-        if (refillRepository.existsByCustomerAndIsCreate(customerRepository.findById(callbackQuery.getMessage().getChatId()).orElseThrow(), false)) {
+        if (expenseRepository.existsByCustomerAndIsCreate(customerRepository.findById(callbackQuery.getMessage().getChatId()).orElseThrow(), false)) {
             return answerMessageFactory.getEditMessageText(
                     callbackQuery,
-                    "У вас есть пополнение в процессе создания, для того чтобы создать новое необходимо отменить предыдущее. После отмены повторите попытку.",
+                    "У вас есть списание в процессе создания, для того чтобы создать новое необходимо отменить предыдущее. После отмены повторите попытку.",
                     keyboardFactory.getInlineKeyboard(
-                            List.of("Отменить предыдущее пополнение",
+                            List.of("Отменить предыдущее списание",
                                     "Назад"),
                             List.of(1, 1),
-                            List.of("REFILL_CANCEL","START")
+                            List.of("EXPENSE_CANCEL","START")
                     )
             );
         }
 
         return answerMessageFactory.getEditMessageText(
                 callbackQuery,
-                "Здесь Вы можете сохранять Ваши пополнения денежных средств. Нажмите продолжить для создания.",
+                "Здесь вы можете сохранять Ваши списания денежных средств. Нажмите продолжить для создания.",
                 keyboardFactory.getInlineKeyboard(
                         List.of("Продолжить",
                                 "Назад"),
                         List.of(1, 1),
-                        List.of("REFILL_SUM","START")
+                        List.of("EXPENSE_SUM","START")
                 )
         );
     }
 
     private BotApiMethod<?> askSum(CallbackQuery callbackQuery) {
         Customer customer = customerRepository.findById(callbackQuery.getMessage().getChatId()).orElseThrow();
-        customer.setStatus(CustomerStatus.SENDING_REFILL_SUM);
+        customer.setStatus(CustomerStatus.SENDING_EXPENSE_SUM);
 
-        Refill refill = Refill.builder()
+        Expense expense = Expense.builder()
                 .customer(customer)
                 .isCreate(false)
                 .build();
-        refillRepository.save(refill);
+        expenseRepository.save(expense);
 
         return answerMessageFactory.getEditMessageText(
                 callbackQuery,
-                "Введите сумму пополнения. Если число дробное, разделяйтя целую и дробную часть точкой. Например 243.21",
+                "Введите сумму списания. Если число дробное, разделяйтя целую и дробную часть точкой. Например 243.21",
                 keyboardFactory.getInlineKeyboard(
                         List.of("Отмена"),
                         List.of(1),
-                        List.of("REFILL_CANCEL")
+                        List.of("EXPENSE_CANCEL")
                 )
         );
     }
@@ -191,32 +191,32 @@ public class RefillManager {
         if (!isCorrect) {
             return answerMessageFactory.getSendMessage(
                     chatId,
-                    "Некорректная сумма пополнения. Повторите попытку.",
+                    "Некорректная сумма списания. Повторите попытку.",
                     keyboardFactory.getInlineKeyboard(
                             List.of("Отмена"),
                             List.of(1),
-                            List.of("REFILL_CANCEL")
+                            List.of("EXPENSE_CANCEL")
                     )
             );
         }
 
-        customer.setStatus(CustomerStatus.SENDING_REFILL_DATE);
+        customer.setStatus(CustomerStatus.SENDING_EXPENSE_DATE);
         customerRepository.save(customer);
-        Refill refill = refillRepository.findByCustomerAndIsCreate(customer, false);
-        refill.setSum(sum);
-        refillRepository.save(refill);
+        Expense expense = expenseRepository.findByCustomerAndIsCreate(customer, false);
+        expense.setSum(sum);
+        expenseRepository.save(expense);
 
         return answerMessageFactory.getSendMessage(
                 chatId,
                 """
-                        Введите дату пополнения в данном формате: дд.мм.гггг
+                        Введите дату списания в данном формате: дд.мм.гггг
                         
                         Например 01.05.2000
                         """,
                 keyboardFactory.getInlineKeyboard(
                         List.of("Отмена"),
                         List.of(1),
-                        List.of("REFILL_CANCEL")
+                        List.of("EXPENSE_CANCEL")
                 )
         );
     }
@@ -231,32 +231,36 @@ public class RefillManager {
         catch (DateTimeParseException e) {
             return answerMessageFactory.getSendMessage(
                     chatId,
-                    "Некорректная дата пополнения.Повторите попытку.",
+                    "Некорректная дата списания. Повторите попытку.",
                     keyboardFactory.getInlineKeyboard(
                             List.of("Отмена"),
                             List.of(1),
-                            List.of("REFILL_CANCEL")
+                            List.of("EXPENSE_CANCEL")
                     )
             );
         }
 
         customer.setStatus(CustomerStatus.FREE);
         customerRepository.save(customer);
-        Refill refill = refillRepository.findByCustomerAndIsCreate(customer,false);
-        refill.setDate(date);
-        refillRepository.save(refill);
+        Expense expense = expenseRepository.findByCustomerAndIsCreate(customer,false);
+        expense.setDate(date);
+        expenseRepository.save(expense);
 
         return answerMessageFactory.getSendMessage(
                 chatId,
-                "Выберите тип пополнения.",
+                "Выберите тип списания.",
                 keyboardFactory.getInlineKeyboard(
-                        List.of("Зарплата", "Проценты",
-                                "Кешбек","Подарок",
+                        List.of("Еда", "Транспорт", "Алкоголь",
+                                "Дом","Книги", "Интернет",
+                                "Здоровье", "Одежда", "Образование",
+                                "Кафе", "Подарок", "Парикмахерская",
                                 "Отмена"),
-                        List.of(2, 2, 1),
-                        List.of("REFILL_TYPE_" + RefillType.PAYCHECK, "REFILL_TYPE_" + RefillType.INTEREST,
-                                "REFILL_TYPE_" + RefillType.CASHBACK, "REFILL_TYPE_" + RefillType.GIFT,
-                                "REFILL_CANCEL")
+                        List.of(3, 3, 3, 3, 1),
+                        List.of("EXPENSE_TYPE_" + ExpenseType.FOOD, "EXPENSE_TYPE_" + ExpenseType.TRANSPORT, "EXPENSE_TYPE_" + ExpenseType.ALCOHOL,
+                                "EXPENSE_TYPE_" + ExpenseType.HOME, "EXPENSE_TYPE_" + ExpenseType.BOOK, "EXPENSE_TYPE_" + ExpenseType.INTERNET,
+                                "EXPENSE_TYPE_" + ExpenseType.HEALTH, "EXPENSE_TYPE_" + ExpenseType.CLOTHES, "EXPENSE_TYPE_" + ExpenseType.EDUCATION,
+                                "EXPENSE_TYPE_" + ExpenseType.CAFE, "EXPENSE_TYPE_" + ExpenseType.GIFT, "EXPENSE_TYPE_" + ExpenseType.BARBERSHOP,
+                                "EXPENSE_CANCEL")
                 )
         );
     }
@@ -264,25 +268,25 @@ public class RefillManager {
     private BotApiMethod<?> addType(CallbackQuery callbackQuery, String type) {
         Long chatId = callbackQuery.getMessage().getChatId();
         Customer customer = customerRepository.findById(chatId).orElseThrow();
-        Refill refill = refillRepository.findByCustomerAndIsCreate(customer, false);
-        refill.setType(RefillType.valueOf(type));
-        refillRepository.save(refill);
+        Expense expense = expenseRepository.findByCustomerAndIsCreate(customer, false);
+        expense.setType(ExpenseType.valueOf(type));
+        expenseRepository.save(expense);
 
-        customer.setStatus(CustomerStatus.SENDING_REFILL_DESC);
+        customer.setStatus(CustomerStatus.SENDING_EXPENSE_DESC);
         customerRepository.save(customer);
 
         return answerMessageFactory.getEditMessageText(
                 callbackQuery,
                 """
                         Укажите описание транзакции.
-                        Если в этом нет надобности, можете нажать кнопку Завершить для сохранения пополнения.
+                        Если в этом нет надобности, можете нажать кнопку Завершить для сохранения списания.
                         """,
                 keyboardFactory.getInlineKeyboard(
                         List.of("Завершить",
                                 "Отмена"),
                         List.of(1, 1),
-                        List.of("REFILL_FINISH",
-                                "REFILL_CANCEL")
+                        List.of("EXPENSE_FINISH",
+                                "EXPENSE_CANCEL")
                 )
         );
     }
@@ -291,14 +295,14 @@ public class RefillManager {
         Long chatId = message.getChatId();
         customer.setStatus(CustomerStatus.FREE);
         customerRepository.save(customer);
-        Refill refill = refillRepository.findByCustomerAndIsCreate(customer, false);
-        refill.setDescription(message.getText());
-        refill.setIsCreate(true);
-        refillRepository.save(refill);
+        Expense expense = expenseRepository.findByCustomerAndIsCreate(customer, false);
+        expense.setDescription(message.getText());
+        expense.setIsCreate(true);
+        expenseRepository.save(expense);
 
         return answerMessageFactory.getSendMessage(
                 chatId,
-                "Пополнение успешно сохранено.",
+                "Списание успешно сохранено.",
                 null
         );
     }
@@ -307,14 +311,14 @@ public class RefillManager {
         Customer customer = customerRepository.findById(callbackQuery.getMessage().getChatId()).orElseThrow();
         customer.setStatus(CustomerStatus.FREE);
         customerRepository.save(customer);
-        Refill refill = refillRepository.findByCustomerAndIsCreate(customer, false);
-        refill.setIsCreate(true);
-        refillRepository.save(refill);
+        Expense expense = expenseRepository.findByCustomerAndIsCreate(customer, false);
+        expense.setIsCreate(true);
+        expenseRepository.save(expense);
 
         bot.execute(
                 answerMessageFactory.getAnswerCallbackQuery(
                         callbackQuery,
-                        "Пополнение успешно сохранено"
+                        "Списание успешно сохранено"
                 )
         );
 
@@ -328,8 +332,8 @@ public class RefillManager {
         Long chatId = callbackQuery.getMessage().getChatId();
         Customer customer = customerRepository.findById(chatId).orElseThrow();
 
-        if (refillRepository.existsByCustomerAndIsCreate(customer, false)) {
-            refillRepository.deleteByCustomerAndIsCreate(
+        if (expenseRepository.existsByCustomerAndIsCreate(customer, false)) {
+            expenseRepository.deleteByCustomerAndIsCreate(
                     customer,
                     false
             );
@@ -339,7 +343,7 @@ public class RefillManager {
             bot.execute(
                     answerMessageFactory.getAnswerCallbackQuery(
                             callbackQuery,
-                            "Пополнение успешно отменено"
+                            "Списание успешно отменено"
                     )
             );
         }
@@ -347,7 +351,7 @@ public class RefillManager {
             bot.execute(
                     answerMessageFactory.getAnswerCallbackQuery(
                             callbackQuery,
-                            "Невозможно отменить пополнение, так как оно уже создано"
+                            "Невозможно отменить списание, так как оно уже создано"
                     )
             );
         }

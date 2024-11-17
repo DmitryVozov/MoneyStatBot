@@ -1,10 +1,7 @@
 package ru.vozov.moneystatbot.model.expense;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 import ru.vozov.moneystatbot.model.customer.Customer;
 
@@ -16,10 +13,13 @@ import java.util.UUID;
 @Table(name = "expense")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
+@Builder
 public class Expense {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     UUID id;
 
     Double sum;
