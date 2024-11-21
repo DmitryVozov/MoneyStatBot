@@ -16,14 +16,16 @@ public class CallbackQueryHandler implements Handler {
     final FeedbackManager feedbackManager;
     final RefillManager refillManager;
     final ExpenseManager expenseManager;
+    final StatisticsManager statisticsManager;
 
     @Autowired
-    public CallbackQueryHandler(StartManager startManager, HelpManager helpManager, FeedbackManager feedbackManager, RefillManager refillManager, ExpenseManager expenseManager) {
+    public CallbackQueryHandler(StartManager startManager, HelpManager helpManager, FeedbackManager feedbackManager, RefillManager refillManager, ExpenseManager expenseManager, StatisticsManager statisticsManager) {
         this.startManager = startManager;
         this.helpManager = helpManager;
         this.feedbackManager = feedbackManager;
         this.refillManager = refillManager;
         this.expenseManager = expenseManager;
+        this.statisticsManager = statisticsManager;
     }
 
     @Override
@@ -45,6 +47,9 @@ public class CallbackQueryHandler implements Handler {
             }
             case "EXPENSE" -> {
                 return expenseManager.answerCallbackQuery(update.getCallbackQuery());
+            }
+            case "STATISTICS" -> {
+                return statisticsManager.answerCallbackQuery(update.getCallbackQuery());
             }
         }
         return null;

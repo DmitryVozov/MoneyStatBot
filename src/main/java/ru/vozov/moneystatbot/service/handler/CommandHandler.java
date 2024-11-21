@@ -18,15 +18,17 @@ public class CommandHandler implements Handler {
     final FeedbackManager feedbackManager;
     final RefillManager refillManager;
     final ExpenseManager expenseManager;
+    final StatisticsManager statisticsManager;
     final AnswerMessageFactory answerMessageFactory;
 
     @Autowired
-    public CommandHandler(StartManager startManager, HelpManager helpManager, FeedbackManager feedbackManager, RefillManager refillManager, ExpenseManager expenseManager, AnswerMessageFactory answerMessageFactory) {
+    public CommandHandler(StartManager startManager, HelpManager helpManager, FeedbackManager feedbackManager, RefillManager refillManager, ExpenseManager expenseManager, StatisticsManager statisticsManager, AnswerMessageFactory answerMessageFactory) {
         this.startManager = startManager;
         this.helpManager = helpManager;
         this.feedbackManager = feedbackManager;
         this.refillManager = refillManager;
         this.expenseManager = expenseManager;
+        this.statisticsManager = statisticsManager;
         this.answerMessageFactory = answerMessageFactory;
     }
 
@@ -49,6 +51,9 @@ public class CommandHandler implements Handler {
             }
             case "/expense" -> {
                 return expenseManager.answerCommand(message);
+            }
+            case "/statistics" -> {
+                return statisticsManager.answerCommand(message);
             }
             default -> {
                 return defaultAnswer(message);
