@@ -34,6 +34,6 @@ public class Refill {
     @JoinColumn(name = "customer_chat_id", referencedColumnName = "chat_id")
     Customer customer;
 
-    @Column(name = "is_create")
-    Boolean isCreate;
+    @Column(name = "in_creation")
+    Boolean inCreation;
 }

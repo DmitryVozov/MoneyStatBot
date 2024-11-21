@@ -50,7 +50,7 @@ public class ExpenseManager {
     public BotApiMethod<?> answerCommand(Message message) {
         Long chatId = message.getChatId();
 
-        if (expenseRepository.existsByCustomerAndIsCreate(customerRepository.findById(chatId).orElseThrow(),false)) {
+        if (expenseRepository.existsByCustomerAndInCreation(customerRepository.findById(chatId).orElseThrow(),true)) {
             return answerMessageFactory.getSendMessage(
                     chatId,
                     "У вас есть списание в процессе создания, для того чтобы создать новое необходимо отменить предыдущее. После отмены повторите попытку.",
@@ -126,7 +126,7 @@ public class ExpenseManager {
 
 
     private BotApiMethod<?> startMessage(CallbackQuery callbackQuery) {
-        if (expenseRepository.existsByCustomerAndIsCreate(customerRepository.findById(callbackQuery.getMessage().getChatId()).orElseThrow(), false)) {
+        if (expenseRepository.existsByCustomerAndInCreation(customerRepository.findById(callbackQuery.getMessage().getChatId()).orElseThrow(), true)) {
             return answerMessageFactory.getEditMessageText(
                     callbackQuery,
                     "У вас есть списание в процессе создания, для того чтобы создать новое необходимо отменить предыдущее. После отмены повторите попытку.",
@@ -157,7 +157,7 @@ public class ExpenseManager {
 
         Expense expense = Expense.builder()
                 .customer(customer)
-                .isCreate(false)
+                .inCreation(true)
                 .build();
         expenseRepository.save(expense);
 
@@ -202,7 +202,7 @@ public class ExpenseManager {
 
         customer.setStatus(CustomerStatus.SENDING_EXPENSE_DATE);
         customerRepository.save(customer);
-        Expense expense = expenseRepository.findByCustomerAndIsCreate(customer, false);
+        Expense expense = expenseRepository.findByCustomerAndInCreation(customer, true);
         expense.setSum(sum);
         expenseRepository.save(expense);
 
@@ -242,7 +242,7 @@ public class ExpenseManager {
 
         customer.setStatus(CustomerStatus.FREE);
         customerRepository.save(customer);
-        Expense expense = expenseRepository.findByCustomerAndIsCreate(customer,false);
+        Expense expense = expenseRepository.findByCustomerAndInCreation(customer,true);
         expense.setDate(date);
         expenseRepository.save(expense);
 
@@ -268,7 +268,7 @@ public class ExpenseManager {
     private BotApiMethod<?> addType(CallbackQuery callbackQuery, String type) {
         Long chatId = callbackQuery.getMessage().getChatId();
         Customer customer = customerRepository.findById(chatId).orElseThrow();
-        Expense expense = expenseRepository.findByCustomerAndIsCreate(customer, false);
+        Expense expense = expenseRepository.findByCustomerAndInCreation(customer, true);
         expense.setType(ExpenseType.valueOf(type));
         expenseRepository.save(expense);
 
@@ -295,9 +295,9 @@ public class ExpenseManager {
         Long chatId = message.getChatId();
         customer.setStatus(CustomerStatus.FREE);
         customerRepository.save(customer);
-        Expense expense = expenseRepository.findByCustomerAndIsCreate(customer, false);
+        Expense expense = expenseRepository.findByCustomerAndInCreation(customer, true);
         expense.setDescription(message.getText());
-        expense.setIsCreate(true);
+        expense.setInCreation(false);
         expenseRepository.save(expense);
 
         return answerMessageFactory.getSendMessage(
@@ -311,8 +311,8 @@ public class ExpenseManager {
         Customer customer = customerRepository.findById(callbackQuery.getMessage().getChatId()).orElseThrow();
         customer.setStatus(CustomerStatus.FREE);
         customerRepository.save(customer);
-        Expense expense = expenseRepository.findByCustomerAndIsCreate(customer, false);
-        expense.setIsCreate(true);
+        Expense expense = expenseRepository.findByCustomerAndInCreation(customer, true);
+        expense.setInCreation(false);
         expenseRepository.save(expense);
 
         bot.execute(
@@ -332,10 +332,10 @@ public class ExpenseManager {
         Long chatId = callbackQuery.getMessage().getChatId();
         Customer customer = customerRepository.findById(chatId).orElseThrow();
 
-        if (expenseRepository.existsByCustomerAndIsCreate(customer, false)) {
-            expenseRepository.deleteByCustomerAndIsCreate(
+        if (expenseRepository.existsByCustomerAndInCreation(customer, true)) {
+            expenseRepository.deleteByCustomerAndInCreation(
                     customer,
-                    false
+                    true
             );
             customer.setStatus(CustomerStatus.FREE);
             customerRepository.save(customer);

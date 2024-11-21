@@ -1,0 +1,17 @@
+[33mcommit 6eeea5961068564809efb0e54911e62720093ed0[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mexpense[m[33m)[m
+Author: DmitryVozov <dmitrii.vozov0105@gmail.com>
+Date:   Thu Nov 21 11:40:36 2024 +0300
+
+    added statistics
+
+[33mcommit 2f7f48adf73561c29a17e3f69dfb49af101d3cc5[m[33m ([m[1;31morigin/expense[m[33m)[m
+Author: DmitryVozov <dmitrii.vozov0105@gmail.com>
+Date:   Sun Nov 17 13:54:22 2024 +0300
+
+    added expense & fix bugs
+
+[33mcommit ff2b640aec542c43f12b5ed5a972d107a9a5207e[m[33m ([m[1;31morigin/main[m[33m, [m[1;32mmain[m[33m)[m
+Author: DmitryVozov <dmitrii.vozov0105@gmail.com>
+Date:   Sat Nov 16 20:48:46 2024 +0300
+
+    Initial commit

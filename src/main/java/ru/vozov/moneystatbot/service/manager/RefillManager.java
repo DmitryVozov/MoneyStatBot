@@ -50,7 +50,7 @@ public class RefillManager {
     public BotApiMethod<?> answerCommand(Message message) {
         Long chatId = message.getChatId();
 
-        if (refillRepository.existsByCustomerAndIsCreate(customerRepository.findById(chatId).orElseThrow(),false)) {
+        if (refillRepository.existsByCustomerAndInCreation(customerRepository.findById(chatId).orElseThrow(),true)) {
             return answerMessageFactory.getSendMessage(
                     chatId,
                     "У вас есть пополнение в процессе создания, для того чтобы создать новое необходимо отменить предыдущее. После отмены повторите попытку.",
@@ -126,7 +126,7 @@ public class RefillManager {
 
 
     private BotApiMethod<?> startMessage(CallbackQuery callbackQuery) {
-        if (refillRepository.existsByCustomerAndIsCreate(customerRepository.findById(callbackQuery.getMessage().getChatId()).orElseThrow(), false)) {
+        if (refillRepository.existsByCustomerAndInCreation(customerRepository.findById(callbackQuery.getMessage().getChatId()).orElseThrow(), true)) {
             return answerMessageFactory.getEditMessageText(
                     callbackQuery,
                     "У вас есть пополнение в процессе создания, для того чтобы создать новое необходимо отменить предыдущее. После отмены повторите попытку.",
@@ -157,7 +157,7 @@ public class RefillManager {
 
         Refill refill = Refill.builder()
                 .customer(customer)
-                .isCreate(false)
+                .inCreation(true)
                 .build();
         refillRepository.save(refill);
 
@@ -202,7 +202,7 @@ public class RefillManager {
 
         customer.setStatus(CustomerStatus.SENDING_REFILL_DATE);
         customerRepository.save(customer);
-        Refill refill = refillRepository.findByCustomerAndIsCreate(customer, false);
+        Refill refill = refillRepository.findByCustomerAndInCreation(customer, true);
         refill.setSum(sum);
         refillRepository.save(refill);
 
@@ -242,7 +242,7 @@ public class RefillManager {
 
         customer.setStatus(CustomerStatus.FREE);
         customerRepository.save(customer);
-        Refill refill = refillRepository.findByCustomerAndIsCreate(customer,false);
+        Refill refill = refillRepository.findByCustomerAndInCreation(customer,true);
         refill.setDate(date);
         refillRepository.save(refill);
 
@@ -264,7 +264,7 @@ public class RefillManager {
     private BotApiMethod<?> addType(CallbackQuery callbackQuery, String type) {
         Long chatId = callbackQuery.getMessage().getChatId();
         Customer customer = customerRepository.findById(chatId).orElseThrow();
-        Refill refill = refillRepository.findByCustomerAndIsCreate(customer, false);
+        Refill refill = refillRepository.findByCustomerAndInCreation(customer, true);
         refill.setType(RefillType.valueOf(type));
         refillRepository.save(refill);
 
@@ -291,9 +291,9 @@ public class RefillManager {
         Long chatId = message.getChatId();
         customer.setStatus(CustomerStatus.FREE);
         customerRepository.save(customer);
-        Refill refill = refillRepository.findByCustomerAndIsCreate(customer, false);
+        Refill refill = refillRepository.findByCustomerAndInCreation(customer, true);
         refill.setDescription(message.getText());
-        refill.setIsCreate(true);
+        refill.setInCreation(false);
         refillRepository.save(refill);
 
         return answerMessageFactory.getSendMessage(
@@ -307,8 +307,8 @@ public class RefillManager {
         Customer customer = customerRepository.findById(callbackQuery.getMessage().getChatId()).orElseThrow();
         customer.setStatus(CustomerStatus.FREE);
         customerRepository.save(customer);
-        Refill refill = refillRepository.findByCustomerAndIsCreate(customer, false);
-        refill.setIsCreate(true);
+        Refill refill = refillRepository.findByCustomerAndInCreation(customer, true);
+        refill.setInCreation(false);
         refillRepository.save(refill);
 
         bot.execute(
@@ -328,10 +328,10 @@ public class RefillManager {
         Long chatId = callbackQuery.getMessage().getChatId();
         Customer customer = customerRepository.findById(chatId).orElseThrow();
 
-        if (refillRepository.existsByCustomerAndIsCreate(customer, false)) {
-            refillRepository.deleteByCustomerAndIsCreate(
+        if (refillRepository.existsByCustomerAndInCreation(customer, true)) {
+            refillRepository.deleteByCustomerAndInCreation(
                     customer,
-                    false
+                    true
             );
             customer.setStatus(CustomerStatus.FREE);
             customerRepository.save(customer);
