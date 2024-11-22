@@ -18,6 +18,7 @@ public class CommandHandler implements Handler {
     final FeedbackManager feedbackManager;
     final OperationManager operationManager;
     final StatisticsManager statisticsManager;
+    final HistoryManager historyManager;
     final AnswerMessageFactory answerMessageFactory;
 
     @Autowired
@@ -25,13 +26,14 @@ public class CommandHandler implements Handler {
                           HelpManager helpManager,
                           FeedbackManager feedbackManager,
                           OperationManager operationManager,
-                          StatisticsManager statisticsManager,
+                          StatisticsManager statisticsManager, HistoryManager historyManager,
                           AnswerMessageFactory answerMessageFactory) {
         this.startManager = startManager;
         this.helpManager = helpManager;
         this.feedbackManager = feedbackManager;
         this.operationManager = operationManager;
         this.statisticsManager = statisticsManager;
+        this.historyManager = historyManager;
         this.answerMessageFactory = answerMessageFactory;
     }
 
@@ -54,6 +56,9 @@ public class CommandHandler implements Handler {
             }
             case "/statistics" -> {
                 return statisticsManager.answerCommand(message);
+            }
+            case "/history" -> {
+                return historyManager.answerCommand(message);
             }
             default -> {
                 return defaultAnswer(message);
