@@ -3,8 +3,7 @@ package ru.vozov.moneystatbot.model.customer;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import ru.vozov.moneystatbot.model.refill.Refill;
-import ru.vozov.moneystatbot.model.expense.Expense;
+import ru.vozov.moneystatbot.model.operation.Operation;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,8 +28,5 @@ public class Customer {
     CustomerStatus status;
 
     @OneToMany(mappedBy = "customer")
-    List<Refill> refillData;
-
-    @OneToMany(mappedBy = "customer")
-    List<Expense> expenseData;
+    List<Operation> operations;
 }

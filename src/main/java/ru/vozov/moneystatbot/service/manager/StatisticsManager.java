@@ -7,11 +7,10 @@ import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
-import ru.vozov.moneystatbot.model.expense.ExpenseType;
-import ru.vozov.moneystatbot.model.refill.RefillType;
-import ru.vozov.moneystatbot.repository.CustomerRepository;
-import ru.vozov.moneystatbot.repository.ExpenseRepository;
-import ru.vozov.moneystatbot.repository.RefillRepository;
+import ru.vozov.moneystatbot.model.operation.ExpenseCategory;
+import ru.vozov.moneystatbot.model.operation.IncomeCategory;
+import ru.vozov.moneystatbot.model.operation.OperationType;
+import ru.vozov.moneystatbot.repository.OperationRepository;
 import ru.vozov.moneystatbot.service.factory.AnswerMessageFactory;
 import ru.vozov.moneystatbot.service.factory.KeyboardFactory;
 
@@ -26,18 +25,16 @@ import java.util.List;
 public class StatisticsManager {
     final AnswerMessageFactory answerMessageFactory;
     final KeyboardFactory keyboardFactory;
-    final RefillRepository refillRepository;
-    final ExpenseRepository expenseRepository;
+    final OperationRepository operationRepository;
 
     @Autowired
     public StatisticsManager(AnswerMessageFactory answerMessageFactory,
                              KeyboardFactory keyboardFactory,
-                             RefillRepository refillRepository,
-                             ExpenseRepository expenseRepository) {
+                             OperationRepository operationRepository) {
         this.answerMessageFactory = answerMessageFactory;
         this.keyboardFactory = keyboardFactory;
-        this.refillRepository = refillRepository;
-        this.expenseRepository = expenseRepository;
+        this.operationRepository = operationRepository;
+
     }
 
     public BotApiMethod<?> answerCommand(Message message) {
@@ -51,17 +48,16 @@ public class StatisticsManager {
                         List.of("Пополнения", "Списания",
                                 "Отмена"),
                         List.of(2, 1),
-                        List.of("STATISTICS_REFILL", "STATISTICS_EXPENSE",
+                        List.of("STATISTICS_INCOME", "STATISTICS_EXPENSE",
                                 "STATISTICS_CANCEL")
                 )
         );
     }
 
     public BotApiMethod<?> answerCallbackQuery(CallbackQuery callbackQuery) {
-        String [] splitCallbackQuery = callbackQuery.getData().split("_");
-        String type = splitCallbackQuery[1];
+        String[] splitCallbackQuery = callbackQuery.getData().split("_");
 
-        if (type.equals("CANCEL")) {
+        if (splitCallbackQuery[1].equals("CANCEL")) {
             return cancel(callbackQuery);
         }
 
@@ -73,43 +69,27 @@ public class StatisticsManager {
             }
             case 3 -> {
                 if (splitCallbackQuery[2].equals("ALLTIME")) {
-                    if (type.equals("REFILL")) {
-                        return getStatisticsRefillForAllTime(callbackQuery);
-                    }
-
-                    return getStatisticsExpenseForAllTime(callbackQuery);
+                    return getStatisticsForAllTimeByType(callbackQuery, splitCallbackQuery);
                 }
 
                 return askYear(callbackQuery, splitCallbackQuery);
             }
             case 4 -> {
                 if (splitCallbackQuery[2].equals("YEAR")) {
-                    if (type.equals("REFILL")) {
-                        return getStatisticsRefillForYear(callbackQuery, splitCallbackQuery);
-                    }
-
-                    return getStatisticsExpenseForYear(callbackQuery, splitCallbackQuery);
+                    return getStatisticsForYearByType(callbackQuery, splitCallbackQuery);
                 }
 
                 return askMonth(callbackQuery);
             }
             case 5 -> {
                 if (splitCallbackQuery[2].equals("MONTH")) {
-                    if (type.equals("REFILL")) {
-                        return getStatisticsRefillForMonth(callbackQuery, splitCallbackQuery);
-                    }
-
-                    return getStatisticsExpenseForMonth(callbackQuery, splitCallbackQuery);
+                    return getStatisticsForMonthByType(callbackQuery, splitCallbackQuery);
                 }
 
                 return askDay(callbackQuery, splitCallbackQuery);
             }
             case 6 -> {
-                if (type.equals("REFILL")) {
-                    return getStatisticsRefillForDay(callbackQuery, splitCallbackQuery);
-                }
-
-                return getStatisticsExpenseForDay(callbackQuery, splitCallbackQuery);
+                return getStatisticsForDayByType(callbackQuery, splitCallbackQuery);
             }
         }
 
@@ -137,31 +117,20 @@ public class StatisticsManager {
     private BotApiMethod<?> askYear(CallbackQuery callbackQuery, String[] splitCallbackQuery) {
         String statisticsType = splitCallbackQuery[1];
 
-        List<Object[]> years = statisticsType.equals("REFILL") ?
-                refillRepository.getDistinctYearsByCustomer(callbackQuery.getMessage().getChatId()) :
-                expenseRepository.getDistinctYearsByCustomer(callbackQuery.getMessage().getChatId());
+        List<Object[]> years = operationRepository.getDistinctYearsByCustomerChatIdAndType(
+                callbackQuery.getMessage().getChatId(),
+                statisticsType
+        );
 
         if (years.isEmpty()) {
             return answerMessageFactory.getEditMessageText(
                     callbackQuery,
                     """
                             У Вас еще нет данных для получения статистики.
-                            Для того чтобы добавить данные вызовите команду /refill или /expense
+                            Для того чтобы добавить данные вызовите команду /income или /expense
                             """,
                     null
             );
-        }
-
-        int buttonLineSize;
-
-        if (years.size() % 3 == 0) {
-            buttonLineSize = 3;
-        }
-        else if (years.size() % 2 == 0) {
-            buttonLineSize = 2;
-        }
-        else {
-            buttonLineSize = 1;
         }
 
         List<String> text = new ArrayList<>();
@@ -174,9 +143,7 @@ public class StatisticsManager {
             text.add(String.valueOf(year));
             data.add(callbackQuery.getData() + "_" + year);
 
-            if ((i+1) % buttonLineSize == 0) {
-                configuration.add(buttonLineSize);
-            }
+            configuration.add(1);
         }
 
         text.add("Отмена");
@@ -259,31 +226,43 @@ public class StatisticsManager {
         );
     }
 
-    private BotApiMethod<?> getStatisticsRefillForAllTime(CallbackQuery callbackQuery) {
+    private BotApiMethod<?> getStatisticsForAllTimeByType(CallbackQuery callbackQuery, String[] splitCallbackQuery) {
         Long chatId = callbackQuery.getMessage().getChatId();
-        List<Object[]> statisticsData = refillRepository.getSumForAllTimeByCustomerGroupByType(chatId);
+        OperationType operationType = OperationType.valueOf(splitCallbackQuery[1]);
+
+        List<Object[]> statisticsData = operationRepository.getSumForAllTimeByCustomerChatIdAndTypeGroupByCategory(
+                chatId,
+                operationType.toString()
+        );
 
         if (statisticsData.isEmpty()) {
             return answerMessageFactory.getEditMessageText(
                     callbackQuery,
                     """
                             У Вас еще нет данных для получения статистики.
-                            Для того чтобы добавить данные вызовите команду /refill или /expense
+                            Для того чтобы добавить данные вызовите команду /income или /expense
                             """,
                     null
             );
         }
 
-        Double sumTotal = (Double) refillRepository.getSumForAllTimeByCustomer(chatId)[0];
+        Double sumTotal = (Double) operationRepository.getSumForAllTimeByCustomerChatIdAndType(chatId, operationType.toString())[0];
 
         StringBuilder statistics = new StringBuilder();
-        statistics.append("Ваша статистика по пополнениям за все время\n\n");
+        statistics.append(
+                String.format(
+                    "Ваша статистика по %s за все время\n\n",
+                    operationType == OperationType.INCOME ? "пополнениям" : "списаниям"
+                )
+        );
 
         for (Object[] data : statisticsData) {
-            String type = RefillType.valueOf((String) data[0]).getName();
+            String category = operationType == OperationType.INCOME ?
+                    IncomeCategory.valueOf((String) data[0]).getName() :
+                    ExpenseCategory.valueOf((String) data[0]).getName();
             Double sum = (Double) data[1];
 
-            statistics.append(String.format("%s %.2f%% %.2f₽\n", type, sum / sumTotal * 100, sum));
+            statistics.append(String.format("%s %.2f%% %.2f₽\n", category, sum / sumTotal * 100, sum));
         }
 
         return answerMessageFactory.getEditMessageText(
@@ -293,20 +272,29 @@ public class StatisticsManager {
         );
     }
 
-    private BotApiMethod<?> getStatisticsRefillForYear(CallbackQuery callbackQuery, String[] splitCallbackQuery) {
+    private BotApiMethod<?> getStatisticsForYearByType(CallbackQuery callbackQuery, String[] splitCallbackQuery) {
         Long chatId = callbackQuery.getMessage().getChatId();
         Integer year = Integer.parseInt(splitCallbackQuery[3]);
-        List<Object[]> statisticsData = refillRepository.getSumForYearByCustomerGroupByType(chatId, year);
-        Double sumTotal = (Double) refillRepository.getSumForYearByCustomer(chatId, year)[0];
+        OperationType type = OperationType.valueOf(splitCallbackQuery[1]);
+        List<Object[]> statisticsData = operationRepository.getSumForYearByCustomerChatIdAndTypeGroupByCategory(chatId, type.toString(), year);
+        Double sumTotal = (Double) operationRepository.getSumForYearByCustomerChatIdAndType(chatId, type.toString(), year)[0];
 
         StringBuilder statistics = new StringBuilder();
-        statistics.append(String.format("Ваша статистика по пополнениям за %d год\n\n", year));
+        statistics.append(
+                String.format(
+                        "Ваша статистика по %s за %d год\n\n",
+                        type == OperationType.INCOME ? "пополнениям" : "списаниям",
+                        year
+                )
+        );
 
         for (Object[] data : statisticsData) {
-            String type = RefillType.valueOf((String) data[0]).getName();
+            String category = type == OperationType.INCOME ?
+                    IncomeCategory.valueOf((String) data[0]).getName() :
+                    ExpenseCategory.valueOf((String) data[0]).getName();
             Double sum = (Double) data[1];
 
-            statistics.append(String.format("%s %.2f%% %.2f₽\n", type, sum / sumTotal * 100, sum));
+            statistics.append(String.format("%s %.2f%% %.2f₽\n", category, sum / sumTotal * 100, sum));
         }
 
         return answerMessageFactory.getEditMessageText(
@@ -316,34 +304,45 @@ public class StatisticsManager {
         );
     }
 
-    private BotApiMethod<?> getStatisticsRefillForMonth(CallbackQuery callbackQuery, String[] splitCallbackQuery) {
+    private BotApiMethod<?> getStatisticsForMonthByType(CallbackQuery callbackQuery, String[] splitCallbackQuery) {
         Long chatId = callbackQuery.getMessage().getChatId();
         Integer year = Integer.parseInt(splitCallbackQuery[3]);
         Integer month = Integer.parseInt(splitCallbackQuery[4]);
-        List<Object[]> statisticsData = refillRepository.getSumForMonthByCustomerGroupByType(chatId, year, month);
+        OperationType type = OperationType.valueOf(splitCallbackQuery[1]);
+        List<Object[]> statisticsData = operationRepository.getSumForMonthByCustomerChatIdAndTypeGroupByCategory(chatId, type.toString(), year, month);
 
         if (statisticsData.isEmpty()) {
             return answerMessageFactory.getEditMessageText(
                     callbackQuery,
-                    """
-                            За данный месяц у Вас не было пополнений.
-                            """,
+                    String.format(
+                        "За данный месяц у Вас не было %s.",
+                        type == OperationType.INCOME ? "пополнений" : "списаний"
+                    ),
                     null
             );
         }
 
-        Double sumTotal = (Double) refillRepository.getSumForMonthByCustomer(chatId, year, month)[0];
+        Double sumTotal = (Double) operationRepository.getSumForMonthByCustomerChatIdAndType(chatId, type.toString(), year, month)[0];
 
         String monthName = getMonthName(month);
 
         StringBuilder statistics = new StringBuilder();
-        statistics.append(String.format("Ваша статистика по пополнениям за %s %d года\n\n", monthName, year));
+        statistics.append(
+                String.format(
+                        "Ваша статистика по %s за %s %d года\n\n",
+                        type == OperationType.INCOME ? "пополнениям" : "списаниям",
+                        monthName,
+                        year
+                )
+        );
 
         for (Object[] data : statisticsData) {
-            String type = RefillType.valueOf((String) data[0]).getName();
+            String category = type == OperationType.INCOME ?
+                    IncomeCategory.valueOf((String) data[0]).getName() :
+                    ExpenseCategory.valueOf((String) data[0]).getName();
             Double sum = (Double) data[1];
 
-            statistics.append(String.format("%s %.2f%% %.2f₽\n", type, sum / sumTotal * 100, sum));
+            statistics.append(String.format("%s %.2f%% %.2f₽\n", category, sum / sumTotal * 100, sum));
         }
 
         return answerMessageFactory.getEditMessageText(
@@ -353,167 +352,45 @@ public class StatisticsManager {
         );
     }
 
-    private BotApiMethod<?> getStatisticsRefillForDay(CallbackQuery callbackQuery, String[] splitCallbackQuery) {
+    private BotApiMethod<?> getStatisticsForDayByType(CallbackQuery callbackQuery, String[] splitCallbackQuery) {
         Long chatId = callbackQuery.getMessage().getChatId();
         LocalDate date = LocalDate.of(
                 Integer.parseInt(splitCallbackQuery[3]),
                 Integer.parseInt(splitCallbackQuery[4]),
                 Integer.parseInt(splitCallbackQuery[5])
         );
-        List<Object[]> statisticsData = refillRepository.getSumForDayByCustomerGroupByType(chatId, date);
+        OperationType type = OperationType.valueOf(splitCallbackQuery[1]);
+        List<Object[]> statisticsData = operationRepository.getSumForDayByCustomerChatIdAndTypeGroupByCategory(chatId, date, type.toString());
 
         if (statisticsData.isEmpty()) {
             return answerMessageFactory.getEditMessageText(
                     callbackQuery,
-                    """
-                            За данный день у Вас не было пополнений.
-                            """,
+                    String.format(
+                            "За данный день у Вас не было %s.",
+                            type == OperationType.INCOME ? "пополнений" : "списаний"
+                    ),
                     null
             );
         }
 
-        Double sumTotal = (Double) refillRepository.getSumForDayByCustomer(chatId, date)[0];
+        Double sumTotal = (Double) operationRepository.getSumForDayByCustomerChatIdAndType(chatId, date, type.toString())[0];
 
         StringBuilder statistics = new StringBuilder();
-        statistics.append(String.format("Ваша статистика по пополнениям за %s\n\n", date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))));
+        statistics.append(
+                String.format(
+                        "Ваша статистика по %s за %s\n\n",
+                        type == OperationType.INCOME ? "пополнениям" : "списаниям",
+                        date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
+                )
+        );
 
         for (Object[] data : statisticsData) {
-            String type = RefillType.valueOf((String) data[0]).getName();
+            String category = type == OperationType.INCOME ?
+                    IncomeCategory.valueOf((String) data[0]).getName() :
+                    ExpenseCategory.valueOf((String) data[0]).getName();
             Double sum = (Double) data[1];
 
-            statistics.append(String.format("%s %.2f%% %.2f₽\n", type, sum / sumTotal * 100, sum));
-        }
-
-        return answerMessageFactory.getEditMessageText(
-                callbackQuery,
-                statistics.toString(),
-                null
-        );
-    }
-
-    private BotApiMethod<?> getStatisticsExpenseForAllTime(CallbackQuery callbackQuery) {
-        Long chatId = callbackQuery.getMessage().getChatId();
-        List<Object[]> statisticsData = expenseRepository.getSumForAllTimeByCustomerGroupByType(chatId);
-
-        if (statisticsData.isEmpty()) {
-            return answerMessageFactory.getEditMessageText(
-                    callbackQuery,
-                    """
-                            У Вас еще нет данных для получения статистики.
-                            Для того чтобы добавить данные вызовите команду /refill или /expense
-                            """,
-                    null
-            );
-        }
-
-        Double sumTotal = (Double) expenseRepository.getSumForAllTimeByCustomer(chatId)[0];
-
-        StringBuilder statistics = new StringBuilder();
-        statistics.append("Ваша статистика по списаниям за все время\n\n");
-
-        for (Object[] data : statisticsData) {
-            String type = ExpenseType.valueOf((String) data[0]).getName();
-            Double sum = (Double) data[1];
-
-            statistics.append(String.format("%s %.2f%% %.2f₽\n", type, sum / sumTotal * 100, sum));
-        }
-
-        return answerMessageFactory.getEditMessageText(
-                callbackQuery,
-                statistics.toString(),
-                null
-        );
-    }
-
-    private BotApiMethod<?> getStatisticsExpenseForYear(CallbackQuery callbackQuery, String[] splitCallbackQuery) {
-        Long chatId = callbackQuery.getMessage().getChatId();
-        Integer year = Integer.parseInt(splitCallbackQuery[3]);
-        List<Object[]> statisticsData = expenseRepository.getSumForYearByCustomerGroupByType(chatId, year);
-        Double sumTotal = (Double) expenseRepository.getSumForYearByCustomer(chatId, year)[0];
-
-        StringBuilder statistics = new StringBuilder();
-        statistics.append(String.format("Ваша статистика по списаниям за %d год\n\n", year));
-
-        for (Object[] data : statisticsData) {
-            String type = ExpenseType.valueOf((String) data[0]).getName();
-            Double sum = (Double) data[1];
-
-            statistics.append(String.format("%s %.2f%% %.2f₽\n", type, sum / sumTotal * 100, sum));
-        }
-
-        return answerMessageFactory.getEditMessageText(
-                callbackQuery,
-                statistics.toString(),
-                null
-        );
-    }
-
-    private BotApiMethod<?> getStatisticsExpenseForMonth(CallbackQuery callbackQuery, String[] splitCallbackQuery) {
-        Long chatId = callbackQuery.getMessage().getChatId();
-        Integer year = Integer.parseInt(splitCallbackQuery[3]);
-        Integer month = Integer.parseInt(splitCallbackQuery[4]);
-        List<Object[]> statisticsData = expenseRepository.getSumForMonthByCustomerGroupByType(chatId, year, month);
-
-        if (statisticsData.isEmpty()) {
-            return answerMessageFactory.getEditMessageText(
-                    callbackQuery,
-                    """
-                            За данный месяц у Вас не было списаний.
-                            """,
-                    null
-            );
-        }
-
-        Double sumTotal = (Double) expenseRepository.getSumForMonthByCustomer(chatId, year, month)[0];
-
-        String monthName = getMonthName(month);
-
-        StringBuilder statistics = new StringBuilder();
-        statistics.append(String.format("Ваша статистика по списаниям за %s %d года\n\n", monthName, year));
-
-        for (Object[] data : statisticsData) {
-            String type = ExpenseType.valueOf((String) data[0]).getName();
-            Double sum = (Double) data[1];
-
-            statistics.append(String.format("%s %.2f%% %.2f₽\n", type, sum / sumTotal * 100, sum));
-        }
-
-        return answerMessageFactory.getEditMessageText(
-                callbackQuery,
-                statistics.toString(),
-                null
-        );
-    }
-
-    private BotApiMethod<?> getStatisticsExpenseForDay(CallbackQuery callbackQuery, String[] splitCallbackQuery) {
-        Long chatId = callbackQuery.getMessage().getChatId();
-        LocalDate date = LocalDate.of(
-                Integer.parseInt(splitCallbackQuery[3]),
-                Integer.parseInt(splitCallbackQuery[4]),
-                Integer.parseInt(splitCallbackQuery[5])
-        );
-        List<Object[]> statisticsData = expenseRepository.getSumForDayByCustomerGroupByType(chatId, date);
-
-        if (statisticsData.isEmpty()) {
-            return answerMessageFactory.getEditMessageText(
-                    callbackQuery,
-                    """
-                            За данный день у Вас не было списаний.
-                            """,
-                    null
-            );
-        }
-
-        Double sumTotal = (Double) expenseRepository.getSumForDayByCustomer(chatId, date)[0];
-
-        StringBuilder statistics = new StringBuilder();
-        statistics.append(String.format("Ваша статистика по списаниям за %s\n\n", date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))));
-
-        for (Object[] data : statisticsData) {
-            String type = ExpenseType.valueOf((String) data[0]).getName();
-            Double sum = (Double) data[1];
-
-            statistics.append(String.format("%s %.2f%% %.2f₽\n", type, sum / sumTotal * 100, sum));
+            statistics.append(String.format("%s %.2f%% %.2f₽\n", category, sum / sumTotal * 100, sum));
         }
 
         return answerMessageFactory.getEditMessageText(
