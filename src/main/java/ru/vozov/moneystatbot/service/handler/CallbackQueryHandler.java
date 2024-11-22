@@ -16,18 +16,20 @@ public class CallbackQueryHandler implements Handler {
     final FeedbackManager feedbackManager;
     final OperationManager operationManager;
     final StatisticsManager statisticsManager;
+    final HistoryManager historyManager;
 
     @Autowired
     public CallbackQueryHandler(StartManager startManager,
                                 HelpManager helpManager,
                                 FeedbackManager feedbackManager,
                                 OperationManager operationManager,
-                                StatisticsManager statisticsManager) {
+                                StatisticsManager statisticsManager, HistoryManager historyManager) {
         this.startManager = startManager;
         this.helpManager = helpManager;
         this.feedbackManager = feedbackManager;
         this.operationManager = operationManager;
         this.statisticsManager = statisticsManager;
+        this.historyManager = historyManager;
     }
 
     @Override
@@ -49,6 +51,9 @@ public class CallbackQueryHandler implements Handler {
             }
             case "STATISTICS" -> {
                 return statisticsManager.answerCallbackQuery(update.getCallbackQuery());
+            }
+            case "HISTORY" -> {
+                return historyManager.answerCallbackQuery(update.getCallbackQuery());
             }
         }
         return null;
