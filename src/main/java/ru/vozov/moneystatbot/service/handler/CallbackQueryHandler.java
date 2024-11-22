@@ -14,17 +14,19 @@ public class CallbackQueryHandler implements Handler {
     final StartManager startManager;
     final HelpManager helpManager;
     final FeedbackManager feedbackManager;
-    final RefillManager refillManager;
-    final ExpenseManager expenseManager;
+    final OperationManager operationManager;
     final StatisticsManager statisticsManager;
 
     @Autowired
-    public CallbackQueryHandler(StartManager startManager, HelpManager helpManager, FeedbackManager feedbackManager, RefillManager refillManager, ExpenseManager expenseManager, StatisticsManager statisticsManager) {
+    public CallbackQueryHandler(StartManager startManager,
+                                HelpManager helpManager,
+                                FeedbackManager feedbackManager,
+                                OperationManager operationManager,
+                                StatisticsManager statisticsManager) {
         this.startManager = startManager;
         this.helpManager = helpManager;
         this.feedbackManager = feedbackManager;
-        this.refillManager = refillManager;
-        this.expenseManager = expenseManager;
+        this.operationManager = operationManager;
         this.statisticsManager = statisticsManager;
     }
 
@@ -42,11 +44,8 @@ public class CallbackQueryHandler implements Handler {
             case "FEEDBACK" -> {
                 return feedbackManager.answerCallBackQuery(update.getCallbackQuery());
             }
-            case "REFILL" -> {
-                return refillManager.answerCallbackQuery(update.getCallbackQuery());
-            }
-            case "EXPENSE" -> {
-                return expenseManager.answerCallbackQuery(update.getCallbackQuery());
+            case "INCOME", "EXPENSE" -> {
+                return operationManager.answerCallbackQuery(update.getCallbackQuery());
             }
             case "STATISTICS" -> {
                 return statisticsManager.answerCallbackQuery(update.getCallbackQuery());

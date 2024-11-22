@@ -16,18 +16,21 @@ public class CommandHandler implements Handler {
     final StartManager startManager;
     final HelpManager helpManager;
     final FeedbackManager feedbackManager;
-    final RefillManager refillManager;
-    final ExpenseManager expenseManager;
+    final OperationManager operationManager;
     final StatisticsManager statisticsManager;
     final AnswerMessageFactory answerMessageFactory;
 
     @Autowired
-    public CommandHandler(StartManager startManager, HelpManager helpManager, FeedbackManager feedbackManager, RefillManager refillManager, ExpenseManager expenseManager, StatisticsManager statisticsManager, AnswerMessageFactory answerMessageFactory) {
+    public CommandHandler(StartManager startManager,
+                          HelpManager helpManager,
+                          FeedbackManager feedbackManager,
+                          OperationManager operationManager,
+                          StatisticsManager statisticsManager,
+                          AnswerMessageFactory answerMessageFactory) {
         this.startManager = startManager;
         this.helpManager = helpManager;
         this.feedbackManager = feedbackManager;
-        this.refillManager = refillManager;
-        this.expenseManager = expenseManager;
+        this.operationManager = operationManager;
         this.statisticsManager = statisticsManager;
         this.answerMessageFactory = answerMessageFactory;
     }
@@ -46,11 +49,8 @@ public class CommandHandler implements Handler {
             case "/feedback" -> {
                 return feedbackManager.answerCommand(message);
             }
-            case "/refill" -> {
-                return refillManager.answerCommand(message);
-            }
-            case "/expense" -> {
-                return expenseManager.answerCommand(message);
+            case "/income","/expense" -> {
+                return operationManager.answerCommand(message);
             }
             case "/statistics" -> {
                 return statisticsManager.answerCommand(message);

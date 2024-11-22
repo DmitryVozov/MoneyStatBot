@@ -51,7 +51,7 @@ public class StartManager {
                                 "Помощь", "Обратная связь"
                         ),
                         List.of(2, 2),
-                        List.of("REFILL", "EXPENSE",
+                        List.of("INCOME", "EXPENSE",
                                 "HELP", "FEEDBACK"
                         )
                 )
@@ -69,7 +69,7 @@ public class StartManager {
                                 "Помощь", "Обратная связь"
                         ),
                         List.of(2, 2),
-                        List.of("REFILL", "EXPENSE",
+                        List.of("INCOME", "EXPENSE",
                                 "HELP", "FEEDBACK"
                         )
                 )

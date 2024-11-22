@@ -1,23 +1,22 @@
-package ru.vozov.moneystatbot.model.expense;
+package ru.vozov.moneystatbot.model.operation;
 
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import ru.vozov.moneystatbot.model.customer.Customer;
 
-
 import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Table(name = "expense")
+@Table(name = "operation")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 @Builder
-public class Expense {
+public class Operation {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     UUID id;
@@ -27,7 +26,9 @@ public class Expense {
     LocalDate date;
 
     @Enumerated(EnumType.STRING)
-    ExpenseType type;
+    OperationType type;
+
+    String category;
 
     String description;
 
