@@ -179,8 +179,6 @@ public interface OperationRepository extends JpaRepository<Operation, UUID> {
             @Param("date") LocalDate date,
             @Param("type") String type
     );
-<<<<<<< Updated upstream
-=======
 
     @Query(value = """
                 select  o.*
@@ -245,5 +243,4 @@ public interface OperationRepository extends JpaRepository<Operation, UUID> {
             @Param("type") String type,
             @Param("date") LocalDate date
     );
->>>>>>> Stashed changes
 }

@@ -32,7 +32,7 @@ public class Operation {
 
     String description;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_chat_id", referencedColumnName = "chat_id")
     Customer customer;
 
