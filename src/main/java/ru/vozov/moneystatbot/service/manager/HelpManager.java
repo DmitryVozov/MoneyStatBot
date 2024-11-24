@@ -12,6 +12,9 @@ import ru.vozov.moneystatbot.service.factory.KeyboardFactory;
 
 import java.util.List;
 
+import static ru.vozov.moneystatbot.service.data.CallbackQueryData.START;
+import static ru.vozov.moneystatbot.service.data.MessageData.HELP_MESSAGE;
+
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class HelpManager {
@@ -27,12 +30,7 @@ public class HelpManager {
     public BotApiMethod<?> answerCommand(Message message) {
         return answerMessageFactory.getSendMessage(
                 message.getChatId(),
-                """
-                        В главном меню указаны основные доступные команды:
-                        /refill - добавление информации о пополнении
-                        /expense - добавление информации о списании
-                        /statistic - просмотр статистики Ваших трат и пополнений за все время или за указанный период
-                        """,
+                HELP_MESSAGE,
                 null
         );
     }
@@ -40,17 +38,11 @@ public class HelpManager {
     public BotApiMethod<?> answerCallbackQuery(CallbackQuery callbackQuery) {
         return answerMessageFactory.getEditMessageText(
                 callbackQuery,
-                """
-                        В главном меню указаны основные доступные команды:
-                        /refill - добавление информации о пополнении
-                        /expense - добавление информации о списании
-                        /statistic - просмотр статистики Ваших трат и пополнений за все время или за указанный период
-                        """,
-
+                HELP_MESSAGE,
                 keyboardFactory.getInlineKeyboard(
-                        List.of("Назад"),
+                        List.of("\uD83D\uDD19Назад"),
                         List.of(1),
-                        List.of("START")
+                        List.of(START)
                 )
         );
     }

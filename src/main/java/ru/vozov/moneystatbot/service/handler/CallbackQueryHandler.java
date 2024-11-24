@@ -6,10 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import ru.vozov.moneystatbot.service.manager.FeedbackManager;
-import ru.vozov.moneystatbot.service.manager.HelpManager;
-import ru.vozov.moneystatbot.service.manager.RefillManager;
-import ru.vozov.moneystatbot.service.manager.StartManager;
+import ru.vozov.moneystatbot.service.manager.*;
 
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE)
@@ -17,14 +14,22 @@ public class CallbackQueryHandler implements Handler {
     final StartManager startManager;
     final HelpManager helpManager;
     final FeedbackManager feedbackManager;
-    final RefillManager refillManager;
+    final OperationManager operationManager;
+    final StatisticsManager statisticsManager;
+    final HistoryManager historyManager;
 
     @Autowired
-    public CallbackQueryHandler(StartManager startManager, HelpManager helpManager, FeedbackManager feedbackManager, RefillManager refillManager) {
+    public CallbackQueryHandler(StartManager startManager,
+                                HelpManager helpManager,
+                                FeedbackManager feedbackManager,
+                                OperationManager operationManager,
+                                StatisticsManager statisticsManager, HistoryManager historyManager) {
         this.startManager = startManager;
         this.helpManager = helpManager;
         this.feedbackManager = feedbackManager;
-        this.refillManager = refillManager;
+        this.operationManager = operationManager;
+        this.statisticsManager = statisticsManager;
+        this.historyManager = historyManager;
     }
 
     @Override
@@ -41,8 +46,14 @@ public class CallbackQueryHandler implements Handler {
             case "FEEDBACK" -> {
                 return feedbackManager.answerCallBackQuery(update.getCallbackQuery());
             }
-            case "REFILL" -> {
-                return refillManager.answerCallbackQuery(update.getCallbackQuery());
+            case "INCOME", "EXPENSE" -> {
+                return operationManager.answerCallbackQuery(update.getCallbackQuery());
+            }
+            case "STATISTICS" -> {
+                return statisticsManager.answerCallbackQuery(update.getCallbackQuery());
+            }
+            case "HISTORY" -> {
+                return historyManager.answerCallbackQuery(update.getCallbackQuery());
             }
         }
         return null;

@@ -1,25 +1,24 @@
-package ru.vozov.moneystatbot.model.expense;
+package ru.vozov.moneystatbot.model.operation;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
 import ru.vozov.moneystatbot.model.customer.Customer;
-
 
 import java.time.LocalDate;
 import java.util.UUID;
 
 @Entity
-@Table(name = "expense")
+@Table(name = "operation")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
-public class Expense {
+@Builder
+public class Operation {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     UUID id;
 
     Double sum;
@@ -27,14 +26,16 @@ public class Expense {
     LocalDate date;
 
     @Enumerated(EnumType.STRING)
-    ExpenseType type;
+    OperationType type;
+
+    String category;
 
     String description;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_chat_id", referencedColumnName = "chat_id")
     Customer customer;
 
-    @Column(name = "is_create")
-    Boolean isCreate;
+    @Column(name = "in_creation")
+    Boolean inCreation;
 }
