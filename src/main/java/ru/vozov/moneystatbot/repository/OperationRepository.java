@@ -181,7 +181,7 @@ public interface OperationRepository extends JpaRepository<Operation, UUID> {
     );
 
     @Query(value = """
-                select *
+                select  o.*
                     from operation o
                     where o.customer_chat_id = :customer_chat_id
                         and o.type = :type
@@ -195,7 +195,7 @@ public interface OperationRepository extends JpaRepository<Operation, UUID> {
     );
 
     @Query(value = """
-                select *
+                select  o.*
                     from operation o
                     where o.customer_chat_id = :customer_chat_id
                         and o.type = :type
@@ -211,7 +211,7 @@ public interface OperationRepository extends JpaRepository<Operation, UUID> {
     );
 
     @Query(value = """
-                select *
+                select  o.*
                     from operation o
                     where o.customer_chat_id = :customer_chat_id
                         and o.type = :type
@@ -229,7 +229,7 @@ public interface OperationRepository extends JpaRepository<Operation, UUID> {
     );
 
     @Query(value = """
-                select *
+                select  o.*
                     from operation o
                     where o.customer_chat_id = :customer_chat_id
                         and o.type = :type

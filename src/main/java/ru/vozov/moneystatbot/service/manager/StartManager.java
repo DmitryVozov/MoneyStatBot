@@ -15,6 +15,9 @@ import ru.vozov.moneystatbot.service.factory.KeyboardFactory;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static ru.vozov.moneystatbot.service.data.CallbackQueryData.*;
+import static ru.vozov.moneystatbot.service.data.MessageData.START_MESSAGE;
+
 @Component
 public class StartManager {
     final AnswerMessageFactory answerMessageFactory;
@@ -43,16 +46,16 @@ public class StartManager {
 
         return answerMessageFactory.getSendMessage(
                 message.getChatId(),
-                """
-                        Вас приветствует бот для учета финансов, он Вам поможет сохранять информацию о Ваших пополнениях и тратах и создавать отчеты по указанным данным за разные периоды.
-                        """,
+                START_MESSAGE,
                 keyboardFactory.getInlineKeyboard(
-                        List.of("Добавить пополнение", "Добавить списание",
-                                "Помощь", "Обратная связь"
+                        List.of("Добавить операцию дохода\uD83D\uDCC8",
+                                "Добавить операцию расхода\uD83D\uDCC9",
+                                "Помощь\uD83C\uDD98", "Обратная связь✉️"
                         ),
-                        List.of(2, 2),
-                        List.of("INCOME", "EXPENSE",
-                                "HELP", "FEEDBACK"
+                        List.of(1, 1, 2),
+                        List.of(INCOME,
+                                EXPENSE,
+                                HELP, FEEDBACK
                         )
                 )
         );
@@ -61,16 +64,16 @@ public class StartManager {
     public BotApiMethod<?> answerCallbackQuery(CallbackQuery callbackQuery) {
         return answerMessageFactory.getEditMessageText(
                 callbackQuery,
-                """
-                        Вас приветствует бот для учета финансов, он Вам поможет сохранять информацию о Ваших пополнениях и тратах и создавать отчеты по указанным данным за разные периоды.
-                        """,
+                START_MESSAGE,
                 keyboardFactory.getInlineKeyboard(
-                        List.of("Добавить пополнение", "Добавить списание",
-                                "Помощь", "Обратная связь"
+                        List.of("Добавить операцию дохода\uD83D\uDCC8",
+                                "Добавить операцию расхода\uD83D\uDCC9",
+                                "Помощь\uD83C\uDD98", "Обратная связь✉️"
                         ),
-                        List.of(2, 2),
-                        List.of("INCOME", "EXPENSE",
-                                "HELP", "FEEDBACK"
+                        List.of(1, 1, 2),
+                        List.of(INCOME,
+                                EXPENSE,
+                                HELP, FEEDBACK
                         )
                 )
         );

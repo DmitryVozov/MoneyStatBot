@@ -10,6 +10,9 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import ru.vozov.moneystatbot.service.factory.AnswerMessageFactory;
 import ru.vozov.moneystatbot.service.manager.*;
 
+import static ru.vozov.moneystatbot.service.data.CommandData.*;
+import static ru.vozov.moneystatbot.service.data.MessageData.UNSUPPORTED_COMMAND_MESSAGE;
+
 @Component
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CommandHandler implements Handler {
@@ -26,7 +29,8 @@ public class CommandHandler implements Handler {
                           HelpManager helpManager,
                           FeedbackManager feedbackManager,
                           OperationManager operationManager,
-                          StatisticsManager statisticsManager, HistoryManager historyManager,
+                          StatisticsManager statisticsManager,
+                          HistoryManager historyManager,
                           AnswerMessageFactory answerMessageFactory) {
         this.startManager = startManager;
         this.helpManager = helpManager;
@@ -42,22 +46,22 @@ public class CommandHandler implements Handler {
         Message message = update.getMessage();
 
         switch (message.getText()) {
-            case "/start" -> {
+            case START_COMMAND -> {
                 return startManager.answerCommand(message);
             }
-            case "/help" -> {
+            case HELP_COMMAND -> {
                 return helpManager.answerCommand(message);
             }
-            case "/feedback" -> {
+            case FEEDBACK_COMMAND -> {
                 return feedbackManager.answerCommand(message);
             }
-            case "/income","/expense" -> {
+            case INCOME_COMMAND, EXPENSE_COMMAND -> {
                 return operationManager.answerCommand(message);
             }
-            case "/statistics" -> {
+            case STATISTICS_COMMAND -> {
                 return statisticsManager.answerCommand(message);
             }
-            case "/history" -> {
+            case HISTORY_COMMAND -> {
                 return historyManager.answerCommand(message);
             }
             default -> {
@@ -69,7 +73,7 @@ public class CommandHandler implements Handler {
     private BotApiMethod<?> defaultAnswer(Message message) {
         return answerMessageFactory.getSendMessage(
                 message.getChatId(),
-                "Данная команда не поддерживается",
+                UNSUPPORTED_COMMAND_MESSAGE,
                 null
         );
     }

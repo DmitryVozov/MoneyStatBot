@@ -5,12 +5,14 @@ import lombok.Getter;
 import java.util.ArrayList;
 import java.util.List;
 
+import static ru.vozov.moneystatbot.service.data.CallbackQueryData.INCOME_CATEGORY;
+
 @Getter
 public enum IncomeCategory {
-    PAYCHECK("Зарплата"),
-    INTEREST("Проценты"),
-    GIFT("Подарок"),
-    CASHBACK("Кэшбек");
+    PAYCHECK("\uD83D\uDCB0Зарплата"),
+    INTEREST("\uD83C\uDFE6Проценты"),
+    GIFT("\uD83C\uDF81Подарок"),
+    CASHBACK("\uD83D\uDCB8Кэшбэк");
 
     private final String name;
 
@@ -40,7 +42,7 @@ public enum IncomeCategory {
         List<String> callbackQueryDataNames = new ArrayList<>();
 
         for (IncomeCategory category : IncomeCategory.values()) {
-            callbackQueryDataNames.add("INCOME_CATEGORY_" + category);
+            callbackQueryDataNames.add(INCOME_CATEGORY + category);
         }
 
         return callbackQueryDataNames;
