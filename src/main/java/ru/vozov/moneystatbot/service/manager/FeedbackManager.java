@@ -12,6 +12,9 @@ import ru.vozov.moneystatbot.service.factory.KeyboardFactory;
 
 import java.util.List;
 
+import static ru.vozov.moneystatbot.service.data.CallbackQueryData.START;
+import static ru.vozov.moneystatbot.service.data.MessageData.FEEDBACK_MESSAGE;
+
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class FeedbackManager {
@@ -27,11 +30,7 @@ public class FeedbackManager {
     public BotApiMethod<?> answerCommand(Message message) {
         return answerMessageFactory.getSendMessage(
                 message.getChatId(),
-                """
-                        По вопросам и предложениям Вы можете связаться с нами по данным контактам:
-                        https://t.me/mintl0l
-                        https://github.com/DmitryVozov
-                        """,
+                FEEDBACK_MESSAGE,
                 null
         );
     }
@@ -39,15 +38,11 @@ public class FeedbackManager {
     public BotApiMethod<?> answerCallBackQuery(CallbackQuery callbackQuery) {
         return answerMessageFactory.getEditMessageText(
                 callbackQuery,
-                """
-                        По вопросам и предложениям Вы можете связаться с нами по данным контактам:
-                        https://t.me/mintl0l
-                        https://github.com/DmitryVozov
-                        """,
+                FEEDBACK_MESSAGE,
                 keyboardFactory.getInlineKeyboard(
-                        List.of("Назад"),
+                        List.of("\uD83D\uDD19Назад"),
                         List.of(1),
-                        List.of("START")
+                        List.of(START)
                 )
         );
     }

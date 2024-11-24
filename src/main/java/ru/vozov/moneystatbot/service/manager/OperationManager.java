@@ -27,6 +27,10 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
+import static ru.vozov.moneystatbot.service.data.CallbackQueryData.*;
+import static ru.vozov.moneystatbot.service.data.CommandData.INCOME_COMMAND;
+import static ru.vozov.moneystatbot.service.data.MessageData.*;
+
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OperationManager {
@@ -51,76 +55,61 @@ public class OperationManager {
 
     public BotApiMethod<?> answerCommand(Message message) {
         Long chatId = message.getChatId();
-        OperationType type = message.getText().equals("/income") ? OperationType.INCOME : OperationType.EXPENSE;
+        OperationType type = message.getText().equals(INCOME_COMMAND) ? OperationType.INCOME : OperationType.EXPENSE;
 
         if (operationRepository.existsByCustomerAndInCreationAndType(customerRepository.findById(chatId).orElseThrow(),true, type)) {
             return answerMessageFactory.getSendMessage(
                     chatId,
-                    getTextByTransactionType(
-                            "У вас есть %s в процессе создания, для того чтобы создать новое необходимо отменить предыдущее. После отмены повторите попытку.",
-                            "EXISTS_IN_CREATION",
-                            type
-                    ),
+                    OPERATION_EXISTS_IN_CREATION_MESSAGE,
                     keyboardFactory.getInlineKeyboard(
-                            List.of(
-                                    getTextByTransactionType(
-                                            "Отменить предыдущее %s",
-                                            "CANCEL_PREVIOUS",
-                                            type
-                                    )
-                            ),
+                            List.of("Отменить операцию"),
                             List.of(1),
-                            List.of(type + "_CANCEL")
+                            List.of(type + CANCEL)
                     )
             );
-        }
+    }
 
         return answerMessageFactory.getSendMessage(
                 chatId,
-                getTextByTransactionType(
-                        "Здесь Вы можете сохранять Ваши %s денежных средств. Нажмите продолжить для создания.",
-                        "START",
-                        type
-                ),
+                getStartTextByOperationType(type),
                 keyboardFactory.getInlineKeyboard(
                         List.of("Продолжить",
                                 "Отмена"),
                         List.of(1, 1),
-                        List.of(type + "_SUM", type + "_CANCEL")
+                        List.of(type + SUM, type + CANCEL)
                 )
         );
     }
 
     @Transactional
     public BotApiMethod<?> answerCallbackQuery(CallbackQuery callbackQuery) {
-        String[] splitCallbackQuery = callbackQuery.getData().split("_");
+        String data = callbackQuery.getData();
+        String[] splitCallbackQuery = data.split("_");
 
-        if (splitCallbackQuery.length == 1) {
-            return startMessage(callbackQuery);
-        }
-
-        switch (splitCallbackQuery[1]) {
-            case "SUM" -> {
-                return askSum(callbackQuery, splitCallbackQuery[0]);
-            }
-            case "CATEGORY" -> {
-                return addCategory(callbackQuery, splitCallbackQuery[0],  splitCallbackQuery[2]);
-            }
-            case "FINISH" -> {
-                try {
+        try {
+            switch (data) {
+                case INCOME, EXPENSE -> {
+                    return startMessage(callbackQuery);
+                }
+                case INCOME_SUM, EXPENSE_SUM -> {
+                    return askSum(callbackQuery, splitCallbackQuery[0]);
+                }
+                case INCOME_FINISH, EXPENSE_FINISH -> {
                     return finish(callbackQuery, splitCallbackQuery[0]);
-                } catch (TelegramApiException e) {
-                    throw new RuntimeException(e);
                 }
-            }
-            case "CANCEL" -> {
-                try {
+                case INCOME_CANCEL, EXPENSE_CANCEL -> {
                     return cancel(callbackQuery, splitCallbackQuery[0]);
-                } catch (TelegramApiException e) {
-                    throw new RuntimeException(e);
                 }
             }
         }
+        catch (TelegramApiException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (data.contains(INCOME_CATEGORY) || data.contains(EXPENSE_CATEGORY)) {
+            return addCategory(callbackQuery, splitCallbackQuery[0],  splitCallbackQuery[2]);
+        }
+
         return null;
     }
 
@@ -154,24 +143,16 @@ public class OperationManager {
         if (operationRepository.existsByCustomerAndInCreationAndType(customerRepository.findById(chatId).orElseThrow(), true, type)) {
             return answerMessageFactory.getEditMessageText(
                     callbackQuery,
-                    getTextByTransactionType(
-                            "У вас есть %s в процессе создания, для того чтобы создать новое необходимо отменить предыдущее. После отмены повторите попытку.",
-                            "EXISTS_IN_CREATION",
-                            type
-                    ),
+                    OPERATION_EXISTS_IN_CREATION_MESSAGE,
                     keyboardFactory.getInlineKeyboard(
                             List.of(
-                                getTextByTransactionType(
-                                        "Отменить предыдущее %s",
-                                        "CANCEL_PREVIOUS",
-                                        type
-                                ),
-                                "Назад"
+                                "❌Отменить операцию",
+                                "\uD83D\uDD19Назад"
                             ),
                             List.of(1, 1),
                             List.of(
-                                type + "_CANCEL",
-                                "START"
+                                type + CANCEL,
+                                START
                             )
                     )
             );
@@ -179,20 +160,16 @@ public class OperationManager {
 
         return answerMessageFactory.getEditMessageText(
                 callbackQuery,
-                getTextByTransactionType(
-                        "Здесь Вы можете сохранять Ваши %s денежных средств. Нажмите продолжить для создания.",
-                        "START",
-                        type
-                ),
+                getStartTextByOperationType(type),
                 keyboardFactory.getInlineKeyboard(
                         List.of(
                             "Продолжить",
-                            "Назад"
+                            "\uD83D\uDD19Назад"
                         ),
                         List.of(1, 1),
                         List.of(
-                            type + "_SUM",
-                            "START"
+                            type + SUM,
+                            START
                         )
                 )
         );
@@ -201,7 +178,7 @@ public class OperationManager {
     private BotApiMethod<?> askSum(CallbackQuery callbackQuery, String type) {
         Customer customer = customerRepository.findById(callbackQuery.getMessage().getChatId()).orElseThrow();
         customer.setStatus(
-                type.equals("INCOME") ?
+                type.equals(INCOME) ?
                 CustomerStatus.SENDING_INCOME_SUM :
                 CustomerStatus.SENDING_EXPENSE_SUM
         );
@@ -216,15 +193,11 @@ public class OperationManager {
 
         return answerMessageFactory.getEditMessageText(
                 callbackQuery,
-                getTextByTransactionType(
-                        "Введите сумму %s. Если число дробное, разделяйтя целую и дробную часть точкой. Например 243.21",
-                        "ASK_SUM",
-                        OperationType.valueOf(type)
-                ),
+                ASK_OPERATION_SUM_MESSAGE,
                 keyboardFactory.getInlineKeyboard(
-                        List.of("Отмена"),
+                        List.of("❌Отмена"),
                         List.of(1),
-                        List.of(type + "_CANCEL")
+                        List.of(type + CANCEL)
                 )
         );
     }
@@ -251,15 +224,11 @@ public class OperationManager {
         if (!isCorrect) {
             return answerMessageFactory.getSendMessage(
                     chatId,
-                    getTextByTransactionType(
-                            "Некорректная сумма %s. Повторите попытку.",
-                            "INCORRECT_SUM",
-                            operationType
-                    ),
+                    INCORRECT_OPERATION_SUM_MESSAGE,
                     keyboardFactory.getInlineKeyboard(
-                            List.of("Отмена"),
+                            List.of("❌Отмена"),
                             List.of(1),
-                            List.of(operationType + "_CANCEL")
+                            List.of(operationType + CANCEL)
                     )
             );
         }
@@ -276,19 +245,11 @@ public class OperationManager {
     private BotApiMethod<?> askDate(Long chatId, OperationType type) {
         return answerMessageFactory.getSendMessage(
                 chatId,
-                getTextByTransactionType(
-                        """
-                            Введите дату %s в данном формате: дд.мм.гггг
-                        
-                            Например 01.05.2000
-                        """,
-                        "ASK_DATE",
-                        type
-                ),
+                ASK_OPERATION_DATE_MESSAGE,
                 keyboardFactory.getInlineKeyboard(
-                        List.of("Отмена"),
+                        List.of("❌Отмена"),
                         List.of(1),
-                        List.of(type + "_CANCEL")
+                        List.of(type + CANCEL)
                 )
         );
     }
@@ -304,15 +265,11 @@ public class OperationManager {
         catch (DateTimeParseException e) {
             return answerMessageFactory.getSendMessage(
                     chatId,
-                    getTextByTransactionType(
-                            "Некорректная дата %s. Повторите попытку.",
-                            "INCORRECT_DATE",
-                            type
-                    ),
+                    INCORRECT_OPERATION_DATE_MESSAGE,
                     keyboardFactory.getInlineKeyboard(
-                            List.of("Отмена"),
+                            List.of("❌Отмена"),
                             List.of(1),
-                            List.of(type + "_CANCEL")
+                            List.of(type + CANCEL)
                     )
             );
         }
@@ -344,15 +301,11 @@ public class OperationManager {
 
         text.add("Отмена");
         configuration.add(1);
-        data.add(type + "_CANCEL");
+        data.add(type + CANCEL);
 
         return answerMessageFactory.getSendMessage(
                 chatId,
-                getTextByTransactionType(
-                        "Выберите категорию %s.",
-                        "ASK_CATEGORY",
-                        type
-                ),
+                ASK_OPERATION_CATEGORY_MESSAGE,
                 keyboardFactory.getInlineKeyboard(
                         text,
                         configuration,
@@ -364,7 +317,7 @@ public class OperationManager {
     private BotApiMethod<?> addCategory(CallbackQuery callbackQuery, String type, String category) {
         Long chatId = callbackQuery.getMessage().getChatId();
         Customer customer = customerRepository.findById(chatId).orElseThrow();
-        boolean isIncome = type.equals("INCOME");
+        boolean isIncome = type.equals(INCOME);
         OperationType operationType = OperationType.valueOf(type);
         Operation operation = operationRepository.findByCustomerAndInCreationAndType(customer, true, operationType);
         operation.setCategory(isIncome ? IncomeCategory.valueOf(category).toString() : ExpenseCategory.valueOf(category).toString());
@@ -379,20 +332,13 @@ public class OperationManager {
     private BotApiMethod<?> askDescription(CallbackQuery callbackQuery, OperationType operationType) {
         return answerMessageFactory.getEditMessageText(
                 callbackQuery,
-                getTextByTransactionType(
-                        """
-                                Укажите описание транзакции.
-                                Если в этом нет надобности, можете нажать кнопку Завершить для сохранения %s.
-                                """,
-                        "ASK_DESCRIPTION",
-                        operationType
-                ),
+                ASK_OPERATION_DESCRIPTION_MESSAGE,
                 keyboardFactory.getInlineKeyboard(
-                        List.of("Завершить",
-                                "Отмена"),
+                        List.of("✅Завершить",
+                                "❌Отмена"),
                         List.of(1, 1),
-                        List.of(operationType + "_FINISH",
-                                operationType + "_CANCEL")
+                        List.of(operationType + FINISH,
+                                operationType + CANCEL)
                 )
         );
     }
@@ -409,11 +355,7 @@ public class OperationManager {
 
         return answerMessageFactory.getSendMessage(
                 chatId,
-                getTextByTransactionType(
-                        "%s успешно сохранено.",
-                        "SAVED",
-                        type
-                ),
+                OPERATION_SUCCESS_MESSAGE,
                 null
         );
     }
@@ -428,11 +370,7 @@ public class OperationManager {
         if (operation == null) {
             return answerMessageFactory.getAnswerCallbackQuery(
                     callbackQuery,
-                    getTextByTransactionType(
-                            "Данное %s уже сохранено",
-                            "ALREADY_SAVED",
-                            operationType
-                    )
+                    OPERATION_ALREADY_SAVED_MESSAGE
             );
         }
 
@@ -442,11 +380,7 @@ public class OperationManager {
         bot.execute(
                 answerMessageFactory.getAnswerCallbackQuery(
                         callbackQuery,
-                        getTextByTransactionType(
-                                "%s успешно сохранено.",
-                                "SAVED",
-                                operationType
-                        )
+                        OPERATION_SUCCESS_MESSAGE
                 )
         );
 
@@ -473,11 +407,7 @@ public class OperationManager {
             bot.execute(
                     answerMessageFactory.getAnswerCallbackQuery(
                             callbackQuery,
-                            getTextByTransactionType(
-                                    "%s успешно отменено",
-                                    "CANCELED",
-                                    operationType
-                            )
+                            OPERATION_CANCEL_MESSAGE
                     )
             );
         }
@@ -488,31 +418,10 @@ public class OperationManager {
         );
     }
 
-    private String getTextByTransactionType(String text, String textType, OperationType operationType) {
-        boolean isIncome = operationType == OperationType.INCOME;
-
-        switch (textType) {
-            case "EXISTS_IN_CREATION",
-                 "CANCEL_PREVIOUS",
-                 "ALREADY_SAVED" -> {
-                return String.format(
-                        text,
-                        isIncome ? "пополнение" : "списание"
-                );
-            }
-            case "SAVED",
-                 "CANCELED" -> {
-                return String.format(
-                        text,
-                        isIncome ? "Пополнение" : "Списание"
-                );
-            }
-            default -> {
-                return String.format(
-                        text,
-                        isIncome ? "пополнения" : "списания"
-                );
-            }
-        }
+    private String getStartTextByOperationType(OperationType operationType) {
+        return String.format(
+                OPERATION_START_MESSAGE,
+                operationType == OperationType.INCOME ? "доходы\uD83D\uDCC8" : "расходы\uD83D\uDCC9"
+        );
     }
 }
