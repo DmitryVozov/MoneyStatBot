@@ -65,7 +65,7 @@ public class CommandHandler implements Handler {
                 return historyManager.answerCommand(message);
             }
             default -> {
-                return defaultAnswer(message);gi
+                return defaultAnswer(message);
             }
         }
     }
