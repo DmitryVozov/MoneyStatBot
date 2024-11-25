@@ -4,6 +4,7 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -13,7 +14,7 @@ import ru.vozov.moneystatbot.service.manager.*;
 import static ru.vozov.moneystatbot.service.data.CommandData.*;
 import static ru.vozov.moneystatbot.service.data.MessageData.UNSUPPORTED_COMMAND_MESSAGE;
 
-@Component
+@Service
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class CommandHandler implements Handler {
     final StartManager startManager;

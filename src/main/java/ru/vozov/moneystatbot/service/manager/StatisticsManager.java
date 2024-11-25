@@ -49,7 +49,7 @@ public class StatisticsManager {
                 ASK_STATISTICS_TYPE_MESSAGE,
                 keyboardFactory.getInlineKeyboard(
                         List.of("\uD83D\uDCC8Доходы", "\uD83D\uDCC9Расходы",
-                                "Отмена"),
+                                "❌Отмена"),
                         List.of(2, 1),
                         List.of(STATISTICS_INCOME, STATISTICS_EXPENSE,
                                 STATISTICS_CANCEL)
@@ -111,7 +111,7 @@ public class StatisticsManager {
                         List.of("День","Месяц","Год",
                                 "Все время",
                                 "❌Отмена"),
-                        List.of(3,1),
+                        List.of(3, 1, 1),
                         List.of(data + DAY, data + MONTH, data + YEAR,
                                 data + ALL_TIME,
                                 STATISTICS_CANCEL)
@@ -240,7 +240,7 @@ public class StatisticsManager {
         statistics.append(
                 String.format(
                     STATISTICS_FOR_ALL_TIME_MESSAGE,
-                    type.equals(OperationType.INCOME.toString()) ? "доходам" : "расходам"
+                    type.equals(OperationType.INCOME.toString()) ? "доходов" : "расходов"
                 )
         );
 
@@ -259,7 +259,7 @@ public class StatisticsManager {
         statistics.append(
                 String.format(
                         STATISTICS_FOR_YEAR_MESSAGE,
-                        type.equals(OperationType.INCOME.toString()) ? "доходам" : "расходам",
+                        type.equals(OperationType.INCOME.toString()) ? "доходов" : "расходов",
                         year
                 )
         );
@@ -298,7 +298,7 @@ public class StatisticsManager {
         statistics.append(
                 String.format(
                         STATISTICS_FOR_MONTH_MESSAGE,
-                        type.equals(OperationType.INCOME.toString()) ? "доходам" : "расходам",
+                        type.equals(OperationType.INCOME.toString()) ? "доходов" : "расходов",
                         dateHelper.getMonthName(month, false),
                         year
                 )
@@ -338,7 +338,7 @@ public class StatisticsManager {
         statistics.append(
                 String.format(
                         STATISTICS_FOR_DAY_MESSAGE,
-                        type.equals(OperationType.INCOME.toString()) ? "доходам" : "расходам",
+                        type.equals(OperationType.INCOME.toString()) ? "доходов" : "расходов",
                         date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
                 )
         );
