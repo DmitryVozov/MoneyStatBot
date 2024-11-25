@@ -371,8 +371,8 @@ public class HistoryManager {
                     String.format(
                             HISTORY_OPERATION_MESSAGE,
                             type.equals(OperationType.INCOME.toString()) ?
-                                    IncomeCategory.valueOf(operation.getCategory()).getName() :
-                                    ExpenseCategory.valueOf(operation.getCategory()).getName(),
+                                IncomeCategory.valueOf(operation.getCategory()).getName() :
+                                ExpenseCategory.valueOf(operation.getCategory()).getName(),
                             operation.getSum(),
                             description == null ? "" : description
                     )

@@ -343,8 +343,8 @@ public class OperationManager {
         Customer customer = customerRepository.findById(callbackQuery.getMessage().getChatId()).orElseThrow();
         customer.setStatus(
                 type.equals(OperationType.INCOME.toString()) ?
-                        CustomerStatus.SENDING_INCOME_DESC :
-                        CustomerStatus.SENDING_EXPENSE_DESC
+                CustomerStatus.SENDING_INCOME_DESC :
+                CustomerStatus.SENDING_EXPENSE_DESC
         );
         customerRepository.save(customer);
 
