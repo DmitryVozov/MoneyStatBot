@@ -2,6 +2,7 @@ package ru.vozov.moneystatbot.service.manager;
 
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import static ru.vozov.moneystatbot.service.data.CallbackQueryData.*;
 import static ru.vozov.moneystatbot.service.data.CommandData.INCOME_COMMAND;
@@ -33,6 +36,7 @@ import static ru.vozov.moneystatbot.service.data.MessageData.*;
 
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Slf4j
 public class OperationManager {
     final AnswerMessageFactory answerMessageFactory;
     final KeyboardFactory keyboardFactory;
@@ -62,19 +66,19 @@ public class OperationManager {
                     chatId,
                     OPERATION_EXISTS_IN_CREATION_MESSAGE,
                     keyboardFactory.getInlineKeyboard(
-                            List.of("Отменить операцию"),
+                            List.of("❌Отменить операцию"),
                             List.of(1),
                             List.of(type + CANCEL)
                     )
             );
-    }
+        }
 
         return answerMessageFactory.getSendMessage(
                 chatId,
                 getStartTextByOperationType(type),
                 keyboardFactory.getInlineKeyboard(
                         List.of("Продолжить",
-                                "Отмена"),
+                                "❌Отмена"),
                         List.of(1, 1),
                         List.of(type + SUM, type + CANCEL)
                 )
@@ -101,13 +105,17 @@ public class OperationManager {
                     return cancel(callbackQuery, splitCallbackQuery[0]);
                 }
             }
+
+            if (data.contains(INCOME_FINISH) || data.contains(EXPENSE_FINISH)) {
+                return finish(callbackQuery, splitCallbackQuery[2]);
+            }
         }
         catch (TelegramApiException e) {
-            throw new RuntimeException(e);
+            log.error(e.getMessage());
         }
 
         if (data.contains(INCOME_CATEGORY) || data.contains(EXPENSE_CATEGORY)) {
-            return addCategory(callbackQuery, splitCallbackQuery[0],  splitCallbackQuery[2]);
+            return addCategory(callbackQuery, splitCallbackQuery[0], splitCallbackQuery[2], splitCallbackQuery[3]);
         }
 
         return null;
@@ -127,7 +135,7 @@ public class OperationManager {
                 try {
                     return addDescription(message, customer);
                 } catch (TelegramApiException e) {
-                    throw new RuntimeException(e);
+                    log.error(e.getMessage());
                 }
             }
         }
@@ -146,13 +154,13 @@ public class OperationManager {
                     OPERATION_EXISTS_IN_CREATION_MESSAGE,
                     keyboardFactory.getInlineKeyboard(
                             List.of(
-                                "❌Отменить операцию",
-                                "\uD83D\uDD19Назад"
+                                    "❌Отменить операцию",
+                                    "\uD83D\uDD19Назад"
                             ),
                             List.of(1, 1),
                             List.of(
-                                type + CANCEL,
-                                START
+                                    type + CANCEL,
+                                    START
                             )
                     )
             );
@@ -163,13 +171,13 @@ public class OperationManager {
                 getStartTextByOperationType(type),
                 keyboardFactory.getInlineKeyboard(
                         List.of(
-                            "Продолжить",
-                            "\uD83D\uDD19Назад"
+                                "Продолжить",
+                                "\uD83D\uDD19Назад"
                         ),
                         List.of(1, 1),
                         List.of(
-                            type + SUM,
-                            START
+                                type + SUM,
+                                START
                         )
                 )
         );
@@ -179,8 +187,8 @@ public class OperationManager {
         Customer customer = customerRepository.findById(callbackQuery.getMessage().getChatId()).orElseThrow();
         customer.setStatus(
                 type.equals(INCOME) ?
-                CustomerStatus.SENDING_INCOME_SUM :
-                CustomerStatus.SENDING_EXPENSE_SUM
+                        CustomerStatus.SENDING_INCOME_SUM :
+                        CustomerStatus.SENDING_EXPENSE_SUM
         );
         customerRepository.save(customer);
 
@@ -284,6 +292,9 @@ public class OperationManager {
     }
 
     private BotApiMethod<?> askCategory(Long chatId, OperationType type) {
+        Customer customer = customerRepository.findById(chatId).orElseThrow();
+        Operation operation = operationRepository.findByCustomerAndInCreationAndType(customer, true, type);
+
         List<String> text;
         List<Integer> configuration;
         List<String> data;
@@ -291,15 +302,15 @@ public class OperationManager {
         if (type == OperationType.INCOME) {
             text = IncomeCategory.getCategoryNames();
             configuration = IncomeCategory.getInlineKeyboardConfiguration();
-            data = IncomeCategory.getCallbackQueryDataNames();
+            data = IncomeCategory.getCallbackQueryDataNames(operation.getId());
         }
         else {
             text = ExpenseCategory.getCategoryNames();
             configuration = ExpenseCategory.getInlineKeyboardConfiguration();
-            data = ExpenseCategory.getCallbackQueryDataNames();
+            data = ExpenseCategory.getCallbackQueryDataNames(operation.getId());
         }
 
-        text.add("Отмена");
+        text.add("❌Отмена");
         configuration.add(1);
         data.add(type + CANCEL);
 
@@ -314,22 +325,33 @@ public class OperationManager {
         );
     }
 
-    private BotApiMethod<?> addCategory(CallbackQuery callbackQuery, String type, String category) {
-        Long chatId = callbackQuery.getMessage().getChatId();
-        Customer customer = customerRepository.findById(chatId).orElseThrow();
-        boolean isIncome = type.equals(INCOME);
-        OperationType operationType = OperationType.valueOf(type);
-        Operation operation = operationRepository.findByCustomerAndInCreationAndType(customer, true, operationType);
-        operation.setCategory(isIncome ? IncomeCategory.valueOf(category).toString() : ExpenseCategory.valueOf(category).toString());
-        operationRepository.save(operation);
+    private BotApiMethod<?> addCategory(CallbackQuery callbackQuery, String type, String category, String operationId) {
+        Optional<Operation> operationOptional = operationRepository.findById(UUID.fromString(operationId));
 
-        customer.setStatus(isIncome ? CustomerStatus.SENDING_INCOME_DESC : CustomerStatus.SENDING_EXPENSE_DESC);
+        if (operationOptional.isPresent()) {
+            Operation operation = operationOptional.get();
+            operation.setCategory(category);
+            operationRepository.save(operation);
+        }
+        else {
+            return answerMessageFactory.getAnswerCallbackQuery(
+                    callbackQuery,
+                    OPERATION_CANCELED_MESSAGE
+            );
+        }
+
+        Customer customer = customerRepository.findById(callbackQuery.getMessage().getChatId()).orElseThrow();
+        customer.setStatus(
+                type.equals(OperationType.INCOME.toString()) ?
+                        CustomerStatus.SENDING_INCOME_DESC :
+                        CustomerStatus.SENDING_EXPENSE_DESC
+        );
         customerRepository.save(customer);
 
-        return askDescription(callbackQuery, operationType);
+        return askDescription(callbackQuery, type, operationId);
     }
 
-    private BotApiMethod<?> askDescription(CallbackQuery callbackQuery, OperationType operationType) {
+    private BotApiMethod<?> askDescription(CallbackQuery callbackQuery, String type, String operationId) {
         return answerMessageFactory.getEditMessageText(
                 callbackQuery,
                 ASK_OPERATION_DESCRIPTION_MESSAGE,
@@ -337,8 +359,8 @@ public class OperationManager {
                         List.of("✅Завершить",
                                 "❌Отмена"),
                         List.of(1, 1),
-                        List.of(operationType + FINISH,
-                                operationType + CANCEL)
+                        List.of(type + FINISH + "_" + operationId,
+                                type + CANCEL)
                 )
         );
     }
@@ -360,14 +382,19 @@ public class OperationManager {
         );
     }
 
-    private BotApiMethod<?> finish(CallbackQuery callbackQuery, String type) throws TelegramApiException {
-        Customer customer = customerRepository.findById(callbackQuery.getMessage().getChatId()).orElseThrow();
-        customer.setStatus(CustomerStatus.FREE);
-        customerRepository.save(customer);
-        OperationType operationType = OperationType.valueOf(type);
-        Operation operation = operationRepository.findByCustomerAndInCreationAndType(customer, true, operationType);
+    private BotApiMethod<?> finish(CallbackQuery callbackQuery, String operationId) throws TelegramApiException {
+        Optional<Operation> operationOptional = operationRepository.findById(UUID.fromString(operationId));
 
-        if (operation == null) {
+        if (operationOptional.isEmpty()) {
+            return answerMessageFactory.getAnswerCallbackQuery(
+                    callbackQuery,
+                    OPERATION_CANCELED_MESSAGE
+            );
+        }
+
+        Operation operation = operationOptional.get();
+
+        if (!operation.getInCreation()) {
             return answerMessageFactory.getAnswerCallbackQuery(
                     callbackQuery,
                     OPERATION_ALREADY_SAVED_MESSAGE
@@ -376,6 +403,9 @@ public class OperationManager {
 
         operation.setInCreation(false);
         operationRepository.save(operation);
+        Customer customer = customerRepository.findById(callbackQuery.getMessage().getChatId()).orElseThrow();
+        customer.setStatus(CustomerStatus.FREE);
+        customerRepository.save(customer);
 
         bot.execute(
                 answerMessageFactory.getAnswerCallbackQuery(

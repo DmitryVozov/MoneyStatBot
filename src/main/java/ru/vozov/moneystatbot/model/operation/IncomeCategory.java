@@ -4,6 +4,7 @@ import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static ru.vozov.moneystatbot.service.data.CallbackQueryData.INCOME_CATEGORY;
 
@@ -38,11 +39,11 @@ public enum IncomeCategory {
         return configuration;
     }
 
-    public static List<String> getCallbackQueryDataNames() {
+    public static List<String> getCallbackQueryDataNames(UUID operationId) {
         List<String> callbackQueryDataNames = new ArrayList<>();
 
         for (IncomeCategory category : IncomeCategory.values()) {
-            callbackQueryDataNames.add(INCOME_CATEGORY + category);
+            callbackQueryDataNames.add(INCOME_CATEGORY + category + "_" + operationId);
         }
 
         return callbackQueryDataNames;

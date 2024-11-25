@@ -21,10 +21,12 @@ public class CallbackQueryData {
     public static final String INCOME_FINISH = "INCOME_FINISH";
     public static final String EXPENSE_FINISH = "EXPENSE_FINISH";
 
+    public static final String STATISTICS = "STATISTICS";
     public static final String STATISTICS_INCOME = "STATISTICS_INCOME";
     public static final String STATISTICS_EXPENSE = "STATISTICS_EXPENSE";
     public static final String STATISTICS_CANCEL = "STATISTICS_CANCEL";
 
+    public static final String HISTORY = "HISTORY";
     public static final String HISTORY_INCOME = "HISTORY_INCOME";
     public static final String HISTORY_EXPENSE = "HISTORY_EXPENSE";
     public static final String HISTORY_CANCEL = "HISTORY_CANCEL";

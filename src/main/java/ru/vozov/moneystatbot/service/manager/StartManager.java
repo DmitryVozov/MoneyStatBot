@@ -1,7 +1,11 @@
 package ru.vozov.moneystatbot.service.manager;
 
+import lombok.AccessLevel;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -18,7 +22,9 @@ import java.util.List;
 import static ru.vozov.moneystatbot.service.data.CallbackQueryData.*;
 import static ru.vozov.moneystatbot.service.data.MessageData.START_MESSAGE;
 
-@Component
+@Service
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Slf4j
 public class StartManager {
     final AnswerMessageFactory answerMessageFactory;
     final KeyboardFactory keyboardFactory;
@@ -42,6 +48,7 @@ public class StartManager {
                     build();
 
             customerRepository.save(customer);
+            log.info("User created. chat id = {}", chatId);
         }
 
         return answerMessageFactory.getSendMessage(
