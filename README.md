@@ -10,10 +10,10 @@ Telegram-бот для учета финансов. Он может сохран
 * Telegram API
 
 ### Скриншоты с примерами работы бота
-![start message](https://github.com/DmitryVozov/MoneyStatBot/blob/main/screenshots/start.jpg)
-![add expense](https://github.com/DmitryVozov/MoneyStatBot/blob/main/screenshots/add_expense.jpg)
-![select category](https://github.com/DmitryVozov/MoneyStatBot/blob/main/screenshots/select%20category.jpg)
-![expense history](https://github.com/DmitryVozov/MoneyStatBot/blob/main/screenshots/expense_history.jpg)
-![expense statistics](https://github.com/DmitryVozov/MoneyStatBot/blob/main/screenshots/expense_statistics.jpg)
-![income history](https://github.com/DmitryVozov/MoneyStatBot/blob/main/screenshots/income_history%26statistics.jpg)
+<img src="screenshots/start.jpg" alt="start message" width="300" />
+<img src="screenshots/add_expense.jpg" alt="add expense" width="300" />
+<img src="screenshots/select%20category.jpg" alt="select category" width="300" />
+<img src="screenshots/expense_history.jpg" alt="expense history" width="300" />
+<img src="screenshots/expense_statistics.jpg" alt="expense statistics" width="300" />
+<img src="income_history%26statistics.jpg" alt="income history" width="300" />
 
