@@ -40,9 +40,9 @@ public class CallbackQueryHandler implements Handler {
 
     @Override
     public BotApiMethod<?> answer(Update update) {
-        String keyWord = update.getCallbackQuery().getData().split("_")[0];
+        String data = update.getCallbackQuery().getData().split("_")[0];
 
-        switch (keyWord) {
+        switch (data) {
             case START -> {
                 return startManager.answerCallbackQuery(update.getCallbackQuery());
             }
@@ -63,7 +63,7 @@ public class CallbackQueryHandler implements Handler {
             }
         }
 
-        log.error("unsupported callback query data: {}", update.getCallbackQuery().getData());
+        log.error("Unsupported callback query data: {}", update.getCallbackQuery().getData());
 
         return null;
     }
