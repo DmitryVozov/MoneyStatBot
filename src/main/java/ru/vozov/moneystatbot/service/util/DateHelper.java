@@ -1,18 +1,12 @@
 package ru.vozov.moneystatbot.service.util;
 
-import lombok.AccessLevel;
-import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import ru.vozov.moneystatbot.service.factory.KeyboardFactory;
 
 import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class DateHelper {
     public String getMonthName(Integer monthNumber, boolean isGenitiveCase) {
         switch (monthNumber) {

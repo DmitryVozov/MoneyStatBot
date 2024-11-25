@@ -2,6 +2,7 @@ package ru.vozov.moneystatbot.service.manager;
 
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ import static ru.vozov.moneystatbot.service.data.MessageData.*;
 
 @Service
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Slf4j
 public class HistoryManager {
     final AnswerMessageFactory answerMessageFactory;
     final KeyboardFactory keyboardFactory;
@@ -108,7 +110,7 @@ public class HistoryManager {
             }
         }
         catch (TelegramApiException e) {
-            throw new RuntimeException(e);
+            log.error(e.getMessage());
         }
 
         return null;
@@ -124,7 +126,7 @@ public class HistoryManager {
                         List.of("День","Месяц","Год",
                                 "Все время",
                                 "❌Отмена"),
-                        List.of(3,1),
+                        List.of(3, 1, 1),
                         List.of(data + DAY, data + MONTH, data + YEAR,
                                 data + ALL_TIME,
                                 HISTORY_CANCEL)
@@ -161,7 +163,7 @@ public class HistoryManager {
             configuration.add(1);
         }
 
-        text.add("Отмена");
+        text.add("❌Отмена");
         data.add(HISTORY_CANCEL);
         configuration.add(1);
 
@@ -252,7 +254,7 @@ public class HistoryManager {
         history.append(
                 String.format(
                         HISTORY_FOR_ALL_TIME_MESSAGE,
-                        type.equals(OperationType.INCOME.toString()) ? "доходам" : "расходам"
+                        type.equals(OperationType.INCOME.toString()) ? "доходов" : "расходов"
                 )
         );
 
@@ -269,7 +271,7 @@ public class HistoryManager {
         history.append(
                 String.format(
                         HISTORY_FOR_YEAR_MESSAGE,
-                        type.equals(OperationType.INCOME.toString()) ? "доходам" : "расходам",
+                        type.equals(OperationType.INCOME.toString()) ? "доходов" : "расходов",
                         year
                 )
         );
@@ -299,7 +301,7 @@ public class HistoryManager {
         history.append(
                 String.format(
                         HISTORY_FOR_MONTH_MESSAGE,
-                        type.equals(OperationType.INCOME.toString()) ? "доходам" : "расходам",
+                        type.equals(OperationType.INCOME.toString()) ? "доходов" : "расходов",
                         dateHelper.getMonthName(month, false),
                         year
                 )
@@ -333,7 +335,7 @@ public class HistoryManager {
         history.append(
                 String.format(
                         HISTORY_FOR_DAY_MESSAGE,
-                        type.equals(OperationType.INCOME.toString()) ? "доходам" : "расходам",
+                        type.equals(OperationType.INCOME.toString()) ? "доходов" : "расходов",
                         date.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))
                 )
         );
@@ -369,8 +371,8 @@ public class HistoryManager {
                     String.format(
                             HISTORY_OPERATION_MESSAGE,
                             type.equals(OperationType.INCOME.toString()) ?
-                                    IncomeCategory.valueOf(operation.getCategory()).getName() :
-                                    ExpenseCategory.valueOf(operation.getCategory()).getName(),
+                                IncomeCategory.valueOf(operation.getCategory()).getName() :
+                                ExpenseCategory.valueOf(operation.getCategory()).getName(),
                             operation.getSum(),
                             description == null ? "" : description
                     )

@@ -24,7 +24,7 @@ public interface OperationRepository extends JpaRepository<Operation, UUID> {
                 where o.customer_chat_id = :customer_chat_id
                     and o.type = :type
                     and o.in_creation = false
-                order by date_part('year', o.date)
+                order by date_part('year', o.date) desc
             """,
             nativeQuery = true)
     List<Object[]> getDistinctYearsByCustomerChatIdAndType(
@@ -53,11 +53,11 @@ public interface OperationRepository extends JpaRepository<Operation, UUID> {
     );
 
     @Query(value = """
-                select sum(o.sum)
-                    from operation o
-                    where o.customer_chat_id = :customer_chat_id
-                        and o.type = :type
-                        and o.in_creation = false
+            select sum(o.sum)
+                from operation o
+                where o.customer_chat_id = :customer_chat_id
+                    and o.type = :type
+                    and o.in_creation = false
             """,
             nativeQuery = true)
     Object[] getSumForAllTimeByCustomerChatIdAndType(
@@ -88,12 +88,12 @@ public interface OperationRepository extends JpaRepository<Operation, UUID> {
     );
 
     @Query(value = """
-                select sum(o.sum)
-                    from operation o
-                    where o.customer_chat_id = :customer_chat_id
-                        and o.type = :type
-                        and date_part('year', o.date) = :year
-                        and o.in_creation = false
+            select sum(o.sum)
+                from operation o
+                where o.customer_chat_id = :customer_chat_id
+                    and o.type = :type
+                    and date_part('year', o.date) = :year
+                    and o.in_creation = false
             """,
             nativeQuery = true)
     Object[] getSumForYearByCustomerChatIdAndType(
@@ -127,13 +127,13 @@ public interface OperationRepository extends JpaRepository<Operation, UUID> {
     );
 
     @Query(value = """
-                select sum(o.sum)
-                    from operation o
-                    where o.customer_chat_id = :customer_chat_id
-                        and o.type = :type
-                        and date_part('year', o.date) = :year
-                        and date_part('month', o.date) = :month
-                        and o.in_creation = false
+            select sum(o.sum)
+                from operation o
+                where o.customer_chat_id = :customer_chat_id
+                    and o.type = :type
+                    and date_part('year', o.date) = :year
+                    and date_part('month', o.date) = :month
+                    and o.in_creation = false
             """,
             nativeQuery = true)
     Object[] getSumForMonthByCustomerChatIdAndType(
@@ -166,12 +166,12 @@ public interface OperationRepository extends JpaRepository<Operation, UUID> {
     );
 
     @Query(value = """
-                select sum(o.sum)
-                    from operation o
-                    where o.customer_chat_id = :customer_chat_id
-                        and o.date = :date
-                        and o.type = :type
-                        and o.in_creation = false
+            select sum(o.sum)
+                from operation o
+                where o.customer_chat_id = :customer_chat_id
+                    and o.date = :date
+                    and o.type = :type
+                    and o.in_creation = false
             """,
             nativeQuery = true)
     Object[] getSumForDayByCustomerChatIdAndType(
@@ -181,12 +181,12 @@ public interface OperationRepository extends JpaRepository<Operation, UUID> {
     );
 
     @Query(value = """
-                select  o.*
-                    from operation o
-                    where o.customer_chat_id = :customer_chat_id
-                        and o.type = :type
-                        and o.in_creation = false
-                    order by o.date desc
+            select  o.*
+                from operation o
+                where o.customer_chat_id = :customer_chat_id
+                    and o.type = :type
+                    and o.in_creation = false
+                order by o.date desc
             """,
             nativeQuery = true)
     List<Operation> findByCustomerChatIdAndType(
@@ -195,13 +195,13 @@ public interface OperationRepository extends JpaRepository<Operation, UUID> {
     );
 
     @Query(value = """
-                select  o.*
-                    from operation o
-                    where o.customer_chat_id = :customer_chat_id
-                        and o.type = :type
-                        and date_part('year', o.date) = :year
-                        and o.in_creation = false
-                    order by o.date desc
+            select  o.*
+                from operation o
+                where o.customer_chat_id = :customer_chat_id
+                    and o.type = :type
+                    and date_part('year', o.date) = :year
+                    and o.in_creation = false
+                order by o.date desc
             """,
             nativeQuery = true)
     List<Operation> findByCustomerChatIdAndTypeAndYear(
@@ -211,14 +211,14 @@ public interface OperationRepository extends JpaRepository<Operation, UUID> {
     );
 
     @Query(value = """
-                select  o.*
-                    from operation o
-                    where o.customer_chat_id = :customer_chat_id
-                        and o.type = :type
-                        and date_part('year', o.date) = :year
-                        and date_part('month', o.date) = :month
-                        and o.in_creation = false
-                    order by o.date desc
+            select  o.*
+                from operation o
+                where o.customer_chat_id = :customer_chat_id
+                    and o.type = :type
+                    and date_part('year', o.date) = :year
+                    and date_part('month', o.date) = :month
+                    and o.in_creation = false
+                order by o.date desc
             """,
             nativeQuery = true)
     List<Operation> findByCustomerChatIdAndTypeAndMonth(
@@ -229,13 +229,13 @@ public interface OperationRepository extends JpaRepository<Operation, UUID> {
     );
 
     @Query(value = """
-                select  o.*
-                    from operation o
-                    where o.customer_chat_id = :customer_chat_id
-                        and o.type = :type
-                        and o.date = :date
-                        and o.in_creation = false
-                    order by o.date desc
+            select  o.*
+                from operation o
+                where o.customer_chat_id = :customer_chat_id
+                    and o.type = :type
+                    and o.date = :date
+                    and o.in_creation = false
+                order by o.date desc
             """,
             nativeQuery = true)
     List<Operation> findByCustomerChatIdAndTypeAndDate(
