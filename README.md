@@ -3,7 +3,7 @@ Telegram-бот для учета финансов. Он может сохран
 ### Стек технологий
 * Java 22
 * Spring Boot
-* Spring MVC
+* Spring Web
 * Spring Data
 * PostgreSQL
 * Lombok
